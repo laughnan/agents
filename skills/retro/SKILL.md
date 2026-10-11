@@ -31,6 +31,8 @@ You are suggesting improvements to the coding agent's **environment** so future 
 
 3. **Present candidates in order of severity.** For each: what happened (with evidence from the session), the proposed change, and exactly where it goes (repo vs `~/agents`, which file). Don't apply changes until the user picks which to do.
 
+4. **Mark the session done** once the picked changes are applied (or the user picks none). Prefix the current session's title with `✅ ` unless it already has one. In the Claude desktop app, load `mcp__ccd_session_mgmt__get_session` and `mcp__ccd_session_mgmt__set_session_title` via ToolSearch, read the title with `get_session("self")`, then call `set_session_title("self", "✅ <title>")`. Without those tools (terminal CLI, Codex), tell the user to rename it to `✅ <title>` themselves.
+
 ## Reference
 
 ### Implementation vs review
