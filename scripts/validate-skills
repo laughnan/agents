@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Lint every skills/<name>/SKILL.md. Runs from install and the pre-commit hook.
+set -uo pipefail
+source "$(dirname "$0")/lib.sh"
+
+# Names Claude Code already uses for built-in skills; a personal skill with the
+# same name would be ambiguous.
+RESERVED=" code-review simplify init security-review review loop schedule update-config run claude-api keybindings-help fewer-permission-prompts statusline "
+ROUTER="$REPO/skills/which/SKILL.md"
+
+errors=0
+err() { printf 'error: %s\n' "$*" >&2; errors=$((errors + 1)); }
+
+while IFS= read -r dir; do
+  dirname=$(basename "$dir")
+  file="$dir/SKILL.md"
+  rel="skills/$dirname/SKILL.md"
+
+  [[ "$(head -1 "$file")" == "---" ]] || { err "$rel: missing frontmatter"; continue; }
+  name=$(frontmatter_field "$file" name)
+  desc=$(frontmatter_field "$file" description)
+
+  [[ "$name" == "$dirname" ]] || err "$rel: name '$name' must match directory '$dirname'"
+  [[ "$name" =~ ^[a-z0-9][a-z0-9-]*$ ]] || err "$rel: name must be lowercase kebab-case"
+  [[ "$RESERVED" == *" $name "* ]] && err "$rel: '$name' collides with a built-in Claude Code skill"
+  [[ -n "$desc" ]] || err "$rel: missing description"
+  [[ "$desc" =~ ^\".*\"$ ]] || err "$rel: description must be double-quoted"
+
+  if [[ "$name" != which && -f "$ROUTER" ]] && ! grep -Fq "\`$name\`" "$ROUTER"; then
+    err "$rel: not listed in skills/which/SKILL.md (add it to the router map)"
+  fi
+
+  for script in "$dir"/scripts/*; do
+    [[ -f "$script" ]] || continue
+    [[ -x "$script" ]] || err "skills/$dirname/scripts/$(basename "$script"): not executable"
+  done
+done < <(skill_dirs)
+
+(( errors )) && { echo "$errors skill error(s)" >&2; exit 1; }
+echo "skills ok ($(skill_dirs | wc -l | tr -d ' '))"

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+repo="$(git rev-parse --show-toplevel)"
+"$repo/scripts/validate-skills"
+for f in "$repo"/scripts/install "$repo"/scripts/doctor "$repo"/scripts/validate-skills "$repo"/hooks/*.sh "$repo"/skills/*/scripts/*; do
+  [[ -f "$f" ]] && bash -n "$f"
+done

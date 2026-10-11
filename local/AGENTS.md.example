@@ -1,0 +1,5 @@
+# Laptop-only rules
+
+Rules that apply on this machine only (work vs personal identity, local paths,
+tools that are only installed here). Copy to `local/AGENTS.md` and rerun
+`scripts/install`.
