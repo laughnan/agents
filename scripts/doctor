@@ -35,7 +35,12 @@ check_generated() { # target expected label
   printf '      If the live change is wanted, move it into the source file, then run scripts/install.\n'
 }
 
-check_generated "$CLAUDE_SETTINGS" "$(render_claude_settings)" "config/claude/settings.json + local/claude.settings.json"
+if settings=$(render_json_object render_claude_settings 2>&1); then
+  check_generated "$CLAUDE_SETTINGS" "$settings" "config/claude/settings.json + local/claude.settings.json"
+else
+  bad "config/claude/settings.json or local/claude.settings.json is not a valid JSON object; fix it before running install:"
+  printf '%s\n' "$settings" | sed 's/^/      /'
+fi
 check_generated "$CLAUDE_MD" "$(render_claude_md)" "AGENTS.md imports"
 
 if [[ -d "$HOME/.codex" ]]; then

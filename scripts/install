@@ -51,9 +51,14 @@ for dest in "${SKILL_DESTS[@]}"; do
     name=$(basename "$src")
     target="$dest/$name"
     if [[ -L "$target" ]]; then
-      [[ "$(readlink "$target")" == "$src" ]] && continue
-      act ln -sfn "$src" "$target"
-      did "relinked $target"
+      current=$(readlink "$target")
+      [[ "$current" == "$src" ]] && continue
+      case "$current" in
+        "$REPO"/skills/*)
+          act ln -sfn "$src" "$target"
+          did "relinked $target" ;;
+        *) warn "$target links to $current, not this repo; left alone (remove it and rerun to take it over)" ;;
+      esac
     elif [[ -e "$target" ]]; then
       if diff -rq "$src" "$target" >/dev/null 2>&1; then
         act rm -rf "$target"
@@ -78,7 +83,9 @@ for dest in "${SKILL_DESTS[@]}"; do
 done
 
 # 3. Claude Code settings (generated) and global rules
-write_generated "$CLAUDE_SETTINGS" "$(render_claude_settings)"
+settings=$(render_json_object render_claude_settings) \
+  || { echo "error: config/claude/settings.json or local/claude.settings.json is not a valid JSON object; $CLAUDE_SETTINGS left untouched" >&2; exit 1; }
+write_generated "$CLAUDE_SETTINGS" "$settings"
 write_generated "$CLAUDE_MD" "$(render_claude_md)"
 
 # 4. Codex global rules
@@ -94,8 +101,12 @@ if [[ -d "$HOME/.codex" ]]; then
   fi
 
   if [[ -f "$CODEX_HOOKS" ]] && grep -qi orca "$CODEX_HOOKS"; then
-    write_generated "$CODEX_HOOKS" "$(strip_orca_codex_hooks)"
-    did "removed Orca hooks from $CODEX_HOOKS"
+    if codex_hooks=$(render_json_object strip_orca_codex_hooks); then
+      write_generated "$CODEX_HOOKS" "$codex_hooks"
+      did "removed Orca hooks from $CODEX_HOOKS"
+    else
+      warn "$CODEX_HOOKS is not valid JSON; left untouched"
+    fi
   fi
 fi
 

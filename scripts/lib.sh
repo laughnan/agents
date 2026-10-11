@@ -18,7 +18,7 @@ skill_dirs() {
 
 # Shared settings deep-merged with local ones: objects merge, arrays
 # concatenate without duplicates, local scalars win. __AGENTS_HOME__ becomes
-# the repo path so hooks resolve wherever the repo is cloned.
+# the shell-quoted repo path so hook commands survive spaces in the path.
 render_claude_settings() {
   local local_json='{}'
   [[ -f "$LOCAL_SETTINGS" ]] && local_json=$(cat "$LOCAL_SETTINGS")
@@ -31,7 +31,16 @@ render_claude_settings() {
       elif (a|type) == "array" and (b|type) == "array" then
         reduce (a + b)[] as $x ([]; if any(.[]; . == $x) then . else . + [$x] end)
       else b end;
-    dmerge($s[0]; $l) | walk(if type == "string" then gsub("__AGENTS_HOME__"; $home) else . end)'
+    dmerge($s[0]; $l) | walk(if type == "string" then gsub("__AGENTS_HOME__"; ($home | @sh)) else . end)'
+}
+
+# Run a renderer and print its output only if it succeeded and produced a JSON
+# object. Callers must check the status: a failed render must never be written.
+render_json_object() {
+  local out
+  out=$("$@") || return 1
+  jq -e 'type == "object"' >/dev/null 2>&1 <<<"$out" || { echo "$1 did not produce a JSON object" >&2; return 1; }
+  printf '%s\n' "$out"
 }
 
 render_claude_md() {

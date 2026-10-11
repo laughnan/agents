@@ -33,9 +33,11 @@ case "$tool" in
     grep -Eq '(>|\btee\b|sed[[:space:]]+-i|perl[[:space:]]+-[a-z]*i|\bmv\b|\bcp\b|\bln\b|\brm\b|\btruncate\b)' <<<"$scrubbed" || exit 0
     for g in "${generated[@]}"; do
       rel="${g#"$HOME"/}"
-      if grep -Fq -e "$g" -e "~/$rel" -e "\$HOME/$rel" <<<"$scrubbed"; then
-        deny "$g"
-      fi
+      for form in "$g" "~/$rel" "\$HOME/$rel"; do
+        # Match the exact path only, so settings.json.bak-agents-* stays writable.
+        escaped=$(sed 's/[][\.*^$()+?{}|]/\\&/g' <<<"$form")
+        grep -Eq "${escaped}([^A-Za-z0-9._-]|\$)" <<<"$scrubbed" && deny "$g"
+      done
     done
     ;;
 esac
