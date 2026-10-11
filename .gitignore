@@ -1,0 +1,5 @@
+.DS_Store
+
+# Per-laptop overrides. Only the *.example templates are committed.
+local/*
+!local/*.example

@@ -1,0 +1,28 @@
+{
+  "attribution": {
+    "pr": "— 👶 bébé, alex's agent · approved by alex"
+  },
+  "theme": "auto",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__AGENTS_HOME__/hooks/agent-footer.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__AGENTS_HOME__/hooks/guard-generated-config.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

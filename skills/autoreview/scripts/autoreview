@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# Hand a diff to the *other* provider for an independent, read-only review.
+# Called from Claude Code -> Codex reviews. Called from anything else -> Claude reviews.
+#
+#   autoreview                       dirty tree: uncommitted; clean: branch vs PR base / origin/main
+#   autoreview --uncommitted         staged + unstaged + untracked
+#   autoreview --base <ref>          merge-base(<ref>, HEAD)..HEAD
+#   autoreview --commit <sha>        one commit
+#   autoreview --reviewer codex|claude   force the reviewer
+#   autoreview --model <name>        reviewer model override
+#   autoreview --focus "<text>"      extra instructions (spec, risk areas)
+set -euo pipefail
+
+reviewer="" mode="" ref="" model="" focus=""
+while (( $# )); do
+  case "$1" in
+    --reviewer) reviewer=$2; shift 2 ;;
+    --uncommitted) mode=uncommitted; shift ;;
+    --base) mode=base; ref=$2; shift 2 ;;
+    --commit) mode=commit; ref=$2; shift 2 ;;
+    --model) model=$2; shift 2 ;;
+    --focus) focus=$2; shift 2 ;;
+    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    *) echo "unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+if [[ -z "$reviewer" ]]; then
+  if [[ -n "${CLAUDECODE:-}" ]]; then reviewer=codex; else reviewer=claude; fi
+fi
+command -v "$reviewer" >/dev/null || { echo "error: $reviewer CLI not found; pass --reviewer to pick the other one" >&2; exit 1; }
+
+if [[ -z "$mode" ]]; then
+  if [[ -n "$(git status --porcelain)" ]]; then
+    mode=uncommitted
+  else
+    mode=base
+    ref=$(gh pr view --json baseRefName --jq '"origin/" + .baseRefName' 2>/dev/null || echo origin/main)
+  fi
+fi
+
+case "$mode" in
+  uncommitted)
+    label="uncommitted changes (staged, unstaged, untracked)"
+    diff=$(git diff HEAD; git ls-files --others --exclude-standard -z | xargs -0 -I{} git diff --no-index -- /dev/null {} || true)
+    ;;
+  base)
+    base=$(git merge-base "$ref" HEAD)
+    label="branch $(git branch --show-current) against $ref (merge-base ${base:0:12})"
+    diff=$(git diff "$base"...HEAD)
+    ;;
+  commit)
+    label="commit $(git log -1 --format='%h %s' "$ref")"
+    diff=$(git show --format='%H%n%s%n%n%b' "$ref")
+    ;;
+esac
+
+[[ -n "$diff" ]] || { echo "nothing to review: $label is empty" >&2; exit 1; }
+
+build_prompt() {
+  cat <<EOF
+You are an independent code reviewer. Another AI agent wrote this change; your job is
+to find what it got wrong. Do not modify any files.
+
+Target: $label
+Repository: $root
+
+Read surrounding code as needed (callers, types, tests, the repo's AGENTS.md / CLAUDE.md
+conventions) instead of judging the diff in isolation.
+
+Report only real defects: bugs, regressions, security or data-loss risks, broken
+contracts, missing error handling that will actually bite, tests that don't test what
+they claim. Skip style nits and speculative redesigns.
+
+For each finding, output:
+
+### [P0|P1|P2|P3] <one-line summary>
+- Location: path:line
+- Failure scenario: concrete inputs or state -> wrong result
+- Suggested fix: one or two sentences
+
+P0 = breaks normal operation, security, or data. P1 = likely bug. P2 = edge case worth
+fixing. P3 = minor. Order by severity. If nothing survives scrutiny, say "No findings"
+and list what you checked.
+${focus:+
+Additional focus from the author: $focus}
+
+--- DIFF ---
+$diff
+EOF
+}
+
+prompt=$(build_prompt)
+
+echo "autoreview: $reviewer reviewing $label" >&2
+
+case "$reviewer" in
+  codex)
+    out=$(mktemp "${TMPDIR:-/tmp}/autoreview.XXXXXX")
+    trap 'rm -f "$out"' EXIT
+    printf '%s' "$prompt" | codex exec -s read-only --ephemeral -C "$root" -o "$out" ${model:+-m "$model"} - >&2
+    cat "$out"
+    ;;
+  claude)
+    printf '%s' "$prompt" | claude -p --no-session-persistence --permission-mode plan \
+      --allowedTools Read Grep Glob "Bash(git diff:*)" "Bash(git log:*)" "Bash(git show:*)" "Bash(git blame:*)" \
+      --disallowedTools Edit Write ${model:+--model "$model"}
+    ;;
+  *) echo "error: reviewer must be codex or claude" >&2; exit 2 ;;
+esac

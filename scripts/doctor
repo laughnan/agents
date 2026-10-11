@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Read-only health check: is this laptop wired to the repo the way install
+# would leave it? Exits non-zero if anything needs attention.
+set -uo pipefail
+source "$(dirname "$0")/lib.sh"
+
+problems=0
+ok()   { printf 'ok    %s\n' "$*"; }
+bad()  { printf 'FIX   %s\n' "$*"; problems=$((problems + 1)); }
+note() { printf 'note  %s\n' "$*"; }
+
+for tool in jq git claude codex; do
+  command -v "$tool" >/dev/null && ok "$tool on PATH" || note "$tool not on PATH"
+done
+
+# Skills
+for dest in "${SKILL_DESTS[@]}"; do
+  missing=()
+  while IFS= read -r src; do
+    name=$(basename "$src")
+    [[ "$(readlink "$dest/$name" 2>/dev/null)" == "$src" ]] || missing+=("$name")
+  done < <(skill_dirs)
+  if (( ${#missing[@]} )); then bad "$dest missing/incorrect links: ${missing[*]}"; else ok "$dest has every repo skill"; fi
+  for link in "$dest"/*; do
+    [[ -L "$link" && ! -e "$link" ]] && bad "broken link $link"
+  done
+done
+
+# Generated files
+check_generated() { # target expected label
+  if [[ ! -f "$1" ]]; then bad "$1 missing (run scripts/install)"; return; fi
+  if diff -q <(printf '%s\n' "$2") "$1" >/dev/null; then ok "$1 matches $3"; return; fi
+  bad "$1 has drifted from $3:"
+  diff -u --label "would generate" --label "$1" <(printf '%s\n' "$2") "$1" | sed 's/^/      /'
+  printf '      If the live change is wanted, move it into the source file, then run scripts/install.\n'
+}
+
+check_generated "$CLAUDE_SETTINGS" "$(render_claude_settings)" "config/claude/settings.json + local/claude.settings.json"
+check_generated "$CLAUDE_MD" "$(render_claude_md)" "AGENTS.md imports"
+
+if [[ -d "$HOME/.codex" ]]; then
+  if [[ -f "$LOCAL_AGENTS_MD" ]]; then
+    check_generated "$CODEX_AGENTS_MD" "$(render_codex_agents_md)" "AGENTS.md + local/AGENTS.md"
+  elif [[ "$(readlink "$CODEX_AGENTS_MD" 2>/dev/null)" == "$REPO/AGENTS.md" ]]; then
+    ok "$CODEX_AGENTS_MD -> repo AGENTS.md"
+  else
+    bad "$CODEX_AGENTS_MD is not linked to the repo"
+  fi
+fi
+
+# Local overrides
+[[ -f "$LOCAL_SETTINGS" ]] && ok "using local/claude.settings.json" || note "no local/claude.settings.json (copy local/claude.settings.json.example to add laptop-only settings)"
+[[ -f "$LOCAL_AGENTS_MD" ]] && ok "using local/AGENTS.md" || note "no local/AGENTS.md"
+
+# Orca hooks (Orca.app may re-add them; install strips them again)
+grep -qi orca "$CLAUDE_SETTINGS" 2>/dev/null && bad "Orca hooks present in $CLAUDE_SETTINGS"
+grep -qi orca "$CODEX_HOOKS" 2>/dev/null && bad "Orca hooks present in $CODEX_HOOKS"
+
+# Repo state
+[[ "$(git -C "$REPO" config core.hooksPath)" == ".githooks" ]] && ok "git pre-commit hook active" || bad "git hooks not configured (run scripts/install)"
+[[ -z "$(git -C "$REPO" status --porcelain)" ]] || note "repo has uncommitted changes"
+
+(( problems )) && { echo "$problems problem(s)"; exit 1; }
+echo "all good"

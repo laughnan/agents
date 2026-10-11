@@ -1,0 +1,86 @@
+# agents
+
+My agent setup, synced across laptops: global rules, Claude Code settings and
+hooks, and a flat, hand-picked set of skills that work in Claude Code and Codex.
+
+Inspired by [pstack](https://github.com/cursor/plugins/tree/main/pstack),
+[mattpocock/skills](https://github.com/mattpocock/skills), and
+[steipete/agent-scripts](https://github.com/steipete/agent-scripts). See `NOTICE`.
+
+## New laptop
+
+```bash
+git clone <this repo> ~/agents
+~/agents/scripts/install --dry-run
+~/agents/scripts/install
+~/agents/scripts/doctor
+```
+
+Then add laptop-only overrides if needed (both gitignored):
+
+```bash
+cp ~/agents/local/claude.settings.json.example ~/agents/local/claude.settings.json
+cp ~/agents/local/AGENTS.md.example ~/agents/local/AGENTS.md
+~/agents/scripts/install
+```
+
+After any `git pull`, rerun `scripts/install`.
+
+## What install does
+
+| Source | Becomes |
+|---|---|
+| `skills/<name>/` | symlinks in `~/.claude/skills/` and `~/.agents/skills/` |
+| `config/claude/settings.json` + `local/claude.settings.json` | generated `~/.claude/settings.json` |
+| `AGENTS.md` + `local/AGENTS.md` | generated `~/.claude/CLAUDE.md` (imports), `~/.codex/AGENTS.md` |
+| `.githooks/` | this repo's pre-commit (runs `validate-skills`) |
+
+Generated files are never edited by hand: `hooks/guard-generated-config.sh` blocks
+agents from doing it, and `scripts/doctor` reports drift. Anything install replaces
+is backed up as `<file>.bak-agents-<timestamp>`. It never touches skill directories
+it doesn't own (for example Reflect's app-managed skills).
+
+## Layout
+
+```
+AGENTS.md            global rules for every harness
+config/claude/       shared Claude Code settings (__AGENTS_HOME__ = repo path)
+local/               per-laptop overrides; only *.example is committed
+hooks/               Claude Code hook scripts
+skills/<name>/       one flat directory per skill
+scripts/             install, doctor, validate-skills
+```
+
+## Skills
+
+Not sure which to use? `/which`.
+
+**User-invoked** (run only when typed)
+
+- [`which`](skills/which/SKILL.md): router: which skill fits what you're doing
+- [`pickup`](skills/pickup/SKILL.md) / [`handoff`](skills/handoff/SKILL.md): resume / pause a session via `.agents/handoff.md`
+- [`ketchup`](skills/ketchup/SKILL.md): plain-words catch-up on this chat
+- [`blast-radius`](skills/blast-radius/SKILL.md): what a change could break, proven by running code
+- [`grill`](skills/grill/SKILL.md): stress-test a plan until it's concrete
+- [`to-spec`](skills/to-spec/SKILL.md) / [`to-tickets`](skills/to-tickets/SKILL.md): conversation to spec to tickets
+- [`autoreview`](skills/autoreview/SKILL.md): cross-provider review (Claude ⇄ Codex)
+- [`land-pr`](skills/land-pr/SKILL.md): rebase, gate, merge, verify MERGED
+- [`retro`](skills/retro/SKILL.md): improve the agent setup after a session
+- [`capture-learnings`](skills/capture-learnings/SKILL.md): turn feedback into durable rules
+
+**Model-invoked** (the agent reaches for these itself)
+
+- [`how`](skills/how/SKILL.md) / [`why`](skills/why/SKILL.md): how code works / why it's shaped this way
+- [`diagnose`](skills/diagnose/SKILL.md): disciplined bug and perf diagnosis loop
+- [`tdd`](skills/tdd/SKILL.md): red-green vertical slices
+- [`agent-config`](skills/agent-config/SKILL.md): where config lives and how to change it
+- [`principle-fix-root-causes`](skills/principle-fix-root-causes/SKILL.md),
+  [`principle-prove-it-works`](skills/principle-prove-it-works/SKILL.md),
+  [`principle-subtract-before-you-add`](skills/principle-subtract-before-you-add/SKILL.md)
+
+## Adding a skill
+
+1. Create `skills/<name>/SKILL.md` with `name`, a double-quoted `description`, and
+   `disable-model-invocation: true` if it should only run when typed.
+2. Add it to the map in `skills/which/SKILL.md` and to the list above.
+3. `scripts/install` (validates, then links it).
