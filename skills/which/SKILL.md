@@ -48,6 +48,9 @@ nothing fits, say so; don't stretch a skill to cover it.
 - `capture-learnings`: turn review feedback and corrections into durable rules.
 - `agent-config`: change settings, hooks, global rules, or skills in `~/agents`.
 
+**Writing**
+- `meaning-first`: draft or revise prose (emails, memos, posts) so it reads clearly and not like an LLM.
+
 ## Common chains
 
 | Situation | Chain |
