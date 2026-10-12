@@ -13,7 +13,7 @@ Package the current state so the next agent (or future you) can resume fast. The
 
 ## Location
 
-`handoff.md` in the checkout's scratch directory: run `~/agents/scripts/scratch-dir` from the repo and it prints the directory. Keeping it outside the repo means it never lands in a commit or in a repo's own `.agents/`. Overwrite any previous handoff; it is a snapshot, not a log.
+`handoff.md` in the checkout's scratch directory: `~/agents/scripts/scratch-dir "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"` prints it. Run that from the checkout you're handing off, not from `~/agents`. Keeping it outside the repo means it never lands in a commit or in a repo's own `.agents/`. Overwrite any previous handoff; it is a snapshot, not a log.
 
 ## Gather
 

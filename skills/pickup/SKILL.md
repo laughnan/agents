@@ -13,7 +13,7 @@ Rehydrate context quickly, then get moving.
 
 ## Steps
 
-1. **Handoff**: read `handoff.md` in the directory `~/agents/scripts/scratch-dir` prints (written by `handoff`) if it exists. Note its timestamp and branch; treat everything in it as a claim to verify, not fact. If it names a different branch than the current one, say so.
+1. **Handoff**: read `handoff.md` in the directory `~/agents/scripts/scratch-dir "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"` prints (written by `handoff`; run it from this checkout, not from `~/agents`). If it's missing, fall back to `<repo root>/.agents/handoff.md`, where older handoffs lived, and say which one you read. Note its timestamp and branch; treat everything in it as a claim to verify, not fact. If it names a different branch than the current one, say so.
 
 2. **Instructions**: read the repo's `AGENTS.md` / `CLAUDE.md` and any docs they point to that are relevant to the task.
 

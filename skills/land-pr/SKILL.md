@@ -44,7 +44,9 @@ If it's still unclear, ask. State the gate commands before running them.
 
 Check out the branch with `gh pr checkout "$PR"`. Then:
 
-- **git-spice repo** (`git rev-parse -q --verify refs/spice/data` succeeds and `gs ls` lists the branch): `gs repo sync` to pull trunk, then `gs branch restack` (`gs br`) to rebase the branch onto its base, or `gs upstack restack` if branches are stacked on it, to restack them too. Don't run `gs ls` before the `refs/spice/data` check; in an uninitialized repo it tries to initialize git-spice.
+**Spice branch** means `git rev-parse -q --verify refs/spice/data` succeeds and `gs ls` lists `$head`. Don't run `gs ls` before the `refs/spice/data` check; in an uninitialized repo it tries to initialize git-spice. Steps 5 and 8 use the same test.
+
+- **Spice branch:** `gs repo sync` to pull trunk, then `gs branch restack` (`gs br`) to rebase the branch onto its base, or `gs upstack restack` if branches are stacked on it, to restack them too.
 - **Otherwise:**
 
   ```sh
@@ -63,7 +65,7 @@ Skip this step if the repo forbids rebasing (see guardrails). Resolve conflicts 
 
 ## 5. Push (fork-safe)
 
-In a git-spice repo, `gs branch submit` (`gs bs`) pushes the branch with a lease and updates its PR; use `gs upstack submit` instead if you restacked an upstack. Otherwise:
+For a spice branch, `gs branch submit` (`gs bs`) pushes the branch with a lease and updates its PR; use `gs upstack submit` instead if you restacked an upstack. Otherwise:
 
 ```sh
 head_repo_url=$(gh pr view "$PR" --json headRepository,headRepositoryOwner --jq '"https://github.com/" + .headRepositoryOwner.login + "/" + .headRepository.name')
@@ -94,7 +96,7 @@ State must be `MERGED`. If it isn't (queued, auto-merge pending, blocked), repor
 
 ## 8. Sync local
 
-In a git-spice repo, `gs repo sync --restack` pulls trunk, deletes the merged branch, and retargets and restacks anything that was stacked on it; then `gs upstack submit` from the new bottom to update those PRs. Otherwise:
+For a spice branch, note what was stacked directly on it (`gs ls`) before merging. After merging, `gs repo sync --restack` pulls trunk, deletes the merged branch, and retargets and restacks anything stacked on it. If something was, check out the new bottom of that stack (`gs branch checkout <name>`) and run `gs stack submit` to update its PRs. If nothing was, stop after the sync. Never run `gs upstack submit` or `gs stack submit` from `$base`: it would push every stack. Otherwise:
 
 ```sh
 git checkout "$base"
