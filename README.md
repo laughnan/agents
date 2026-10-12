@@ -60,6 +60,8 @@ Not sure which to use? `/which`.
 - [`which`](skills/which/SKILL.md): router: which skill fits what you're doing
 - [`pickup`](skills/pickup/SKILL.md) / [`handoff`](skills/handoff/SKILL.md): resume / pause a session via `.agents/handoff.md`
 - [`ketchup`](skills/ketchup/SKILL.md): plain-words catch-up on this chat
+- [`teach`](skills/teach/SKILL.md): plain explanation built on `how` + `why`
+- [`bro`](skills/bro/SKILL.md): ELI5, restate the last message or a topic with no jargon
 - [`blast-radius`](skills/blast-radius/SKILL.md): what a change could break, proven by running code
 - [`grill`](skills/grill/SKILL.md): stress-test a plan until it's concrete
 - [`to-spec`](skills/to-spec/SKILL.md) / [`to-tickets`](skills/to-tickets/SKILL.md): conversation to spec to tickets

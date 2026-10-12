@@ -26,6 +26,8 @@ nothing fits, say so; don't stretch a skill to cover it.
 **Understanding code**
 - `how`: how a subsystem works, at onboarding depth.
 - `why`: why it was built this way; digs through git, tickets, docs, chat.
+- `teach`: walk me through it until I actually understand it; runs `how` and `why`, explains plainly.
+- `bro`: ELI5. Restate the last message with no jargon, or `/bro <topic>` to explain a topic from scratch.
 - `blast-radius`: what a small-looking change could break elsewhere, proven by running code.
 
 **Planning**
@@ -59,6 +61,7 @@ nothing fits, say so; don't stretch a skill to cover it.
 | Bug report | `diagnose` → `autoreview` → `land-pr` |
 | "Is this small change safe?" | `blast-radius`, then `autoreview` for a second opinion |
 | Changing unfamiliar code | `how` → `why` → then build |
+| "I don't get it" | `teach` for depth, `bro` for ELI5 |
 | End of day / switching laptops | `handoff`, then `pickup` in the next session |
 | Reviewer left lots of comments | fix them, then `capture-learnings` |
 | The agent keeps making the same mistake | `retro` or `capture-learnings`, then `agent-config` to apply |
