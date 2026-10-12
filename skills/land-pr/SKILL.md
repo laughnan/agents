@@ -65,7 +65,7 @@ Skip this step if the repo forbids rebasing (see guardrails). Resolve conflicts 
 
 ## 5. Push (fork-safe)
 
-For a spice branch, `gs branch submit --nav-comment=false` (`gs bs`) pushes the branch with a lease and updates its PR; use `gs upstack submit --nav-comment=false` instead if you restacked an upstack. Always pass `--nav-comment=false`: git-spice otherwise posts stack navigation comments on the PRs, which is posting on the user's behalf without their approval. Otherwise:
+For a spice branch, `gs branch submit --nav-comment=false` (`gs bs`) pushes the branch with a lease and updates its PR; use `gs upstack submit --update-only --nav-comment=false` instead if you restacked an upstack. Always pass `--nav-comment=false`: git-spice otherwise posts stack navigation comments on the PRs. Pass `--update-only` to every upstack or stack submit: without it git-spice opens PRs for stacked branches that were never submitted. Both would be publishing on the user's behalf without their approval. Otherwise:
 
 ```sh
 head_repo_url=$(gh pr view "$PR" --json headRepository,headRepositoryOwner --jq '"https://github.com/" + .headRepositoryOwner.login + "/" + .headRepository.name')
@@ -96,7 +96,7 @@ State must be `MERGED`. If it isn't (queued, auto-merge pending, blocked), repor
 
 ## 8. Sync local
 
-For a spice branch, note what was stacked directly on it (`gs ls`) before merging. After merging, `gs repo sync --restack` pulls trunk, deletes the merged branch, and retargets and restacks anything stacked on it. If something was, check out the new bottom of that stack (`gs branch checkout <name>`) and run `gs stack submit --nav-comment=false` to update its PRs. If nothing was, stop after the sync. Never run `gs upstack submit` or `gs stack submit` from `$base`: it would push every stack. Otherwise:
+For a spice branch, note every branch stacked directly on it (`gs ls`) before merging; there may be more than one. After merging, `gs repo sync --restack` pulls trunk, deletes the merged branch, and retargets and restacks those branches onto trunk. Then, for each of them, run `gs upstack submit --branch <name> --update-only --nav-comment=false` to update its PRs and those above it. If nothing was stacked on it, stop after the sync. Never run `gs upstack submit` or `gs stack submit` from `$base`: it would push every stack. Otherwise:
 
 ```sh
 git checkout "$base"
