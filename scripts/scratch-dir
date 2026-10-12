@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Print a checkout's scratch directory, creating it if needed. Agents keep
+# working files (handoffs, notes, drafts) here rather than inside the repo.
+#
+#   ~/agents/scratch/<checkout path relative to $HOME>/
+#
+#   scratch-dir [path]   path defaults to the current directory
+#
+# The checkout is the git worktree root containing path, or path itself outside
+# git, so each worktree gets its own directory.
+set -euo pipefail
+unset CDPATH # cd would echo the resolved path into the captures below
+
+repo=$(cd "$(dirname "$0")/.." && pwd -P)
+start=$(cd "${1:-.}" && pwd -P)
+root=$(git -C "$start" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$start")
+root=$(cd "$root" && pwd -P)
+home=$(cd "$HOME" && pwd -P)
+case "$root" in
+  "$home") key=_home ;;
+  "$home"/*) key=${root#"$home"/} ;;
+  *) key=_root$root ;;
+esac
+
+dir="$repo/scratch/$key"
+mkdir -p "$dir"
+printf '%s\n' "$dir"

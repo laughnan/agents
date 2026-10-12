@@ -1,6 +1,6 @@
 ---
 name: to-spec
-description: "Synthesize the current conversation into a spec (problem, solution, user stories, implementation and testing decisions, out of scope) and publish it to GitHub Issues, Linear, or a local markdown file. No interview. Use when the user says \"to spec\", \"write a spec\", or \"turn this into a PRD\"."
+description: "Synthesize the current conversation into a spec (problem, solution, user stories, implementation and testing decisions, out of scope) and publish it to GitHub Issues, Linear, Asana, or a local markdown file. No interview. Use when the user says \"to spec\", \"write a spec\", or \"turn this into a PRD\"."
 disable-model-invocation: true
 license: MIT
 metadata:
@@ -23,11 +23,12 @@ Turn the current conversation and codebase understanding into a spec. Do NOT int
 
 ## Tracker
 
-Check the repo's `AGENTS.md` / `CLAUDE.md` for which tracker is used. If it doesn't say, ask the user, offering what is available:
+Check the repo's `AGENTS.md` / `CLAUDE.md` for which tracker is used, then the global rules (Arcade work: the repo's tracker; personal work: Asana). If neither settles it, ask the user, offering what is available:
 
 - **GitHub Issues**: `gh issue create --title "<title>" --body-file <file>`. Add `--label <label>` only for labels the repo already has (check `gh label list`); don't invent labels.
 - **Linear**: only if a Linear MCP server is connected in this session; use its issue-creation tool with the team/project the user names.
-- **Local file** (fallback): `specs/<feature-slug>.md`, or the repo's existing spec/docs location if it has one.
+- **Asana**: only if an Asana connector or tool is available in this session; use its task-creation tool in the project the user names.
+- **Local file** (fallback): the repo's existing spec location if it has one, otherwise `docs/specs/<feature-slug>.md`.
 
 Never create anything in a remote tracker without showing the content and getting a yes. Report the resulting URL or path.
 

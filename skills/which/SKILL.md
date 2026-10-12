@@ -20,7 +20,7 @@ nothing fits, say so; don't stretch a skill to cover it.
 
 **Starting and stopping a session**
 - `pickup`: resume work; reads the last handoff, git state, PR and CI.
-- `handoff`: stop cleanly; writes `.agents/handoff.md` for the next session.
+- `handoff`: stop cleanly; writes a handoff to scratch for the next session.
 - `ketchup`: plain-words catch-up on what happened in this chat since you last looked.
 
 **Understanding code**

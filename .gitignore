@@ -3,3 +3,6 @@
 # Per-laptop overrides. Only the *.example templates are committed.
 local/*
 !local/*.example
+
+# Per-checkout agent working files (scripts/scratch-dir).
+scratch/

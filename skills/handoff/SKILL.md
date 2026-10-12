@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "Package session state (status, git tree, branch/PR/CI, running processes, checks, next steps, gotchas) into a standalone handoff, written to .agents/handoff.md and printed, so a fresh session can resume via pickup. Use when the user says \"handoff\", \"write a handoff\", or is ending a session."
+description: "Package session state (status, git tree, branch/PR/CI, running processes, checks, next steps, gotchas) into a standalone handoff, written to the checkout's scratch directory and printed, so a fresh session can resume via pickup. Use when the user says \"handoff\", \"write a handoff\", or is ending a session."
 disable-model-invocation: true
 license: MIT
 metadata:
@@ -13,9 +13,7 @@ Package the current state so the next agent (or future you) can resume fast. The
 
 ## Location
 
-`<repo root>/.agents/handoff.md` (`git rev-parse --show-toplevel`; outside a repo, the current directory). Overwrite any previous handoff; it is a snapshot, not a log.
-
-Keep it out of commits without touching tracked files: if `git check-ignore -q .agents/handoff.md` fails, append `.agents/handoff.md` to `.git/info/exclude` (local only).
+`handoff.md` in the checkout's scratch directory: `~/agents/scripts/scratch-dir "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"` prints it. Run that from the checkout you're handing off, not from `~/agents`. Keeping it outside the repo means it never lands in a commit or in a repo's own `.agents/`. Overwrite any previous handoff; it is a snapshot, not a log.
 
 ## Gather
 
