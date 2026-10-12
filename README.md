@@ -48,7 +48,8 @@ config/claude/       shared Claude Code settings (__AGENTS_HOME__ = repo path)
 local/               per-laptop overrides; only *.example is committed
 hooks/               Claude Code hook scripts
 skills/<name>/       one flat directory per skill
-scripts/             install, doctor, validate-skills
+scripts/             install, doctor, validate-skills, scratch-dir
+scratch/             per-checkout agent working files (gitignored)
 ```
 
 ## Skills
@@ -58,7 +59,7 @@ Not sure which to use? `/which`.
 **User-invoked** (run only when typed)
 
 - [`which`](skills/which/SKILL.md): router: which skill fits what you're doing
-- [`pickup`](skills/pickup/SKILL.md) / [`handoff`](skills/handoff/SKILL.md): resume / pause a session via `.agents/handoff.md`
+- [`pickup`](skills/pickup/SKILL.md) / [`handoff`](skills/handoff/SKILL.md): resume / pause a session via a handoff in `scratch/`
 - [`ketchup`](skills/ketchup/SKILL.md): plain-words catch-up on this chat
 - [`teach`](skills/teach/SKILL.md): plain explanation built on `how` + `why`
 - [`bro`](skills/bro/SKILL.md): ELI5, restate the last message or a topic with no jargon

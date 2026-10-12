@@ -5,6 +5,16 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Laptop-only rules go in
 `~/agents/local/AGENTS.md`.
 
+## Repo guidance comes first
+
+- A repo's own guidance wins over these rules: its `AGENTS.md` / `CLAUDE.md`
+  files, rules, and skills. When it ships a workflow for specs, tickets, PRs,
+  reviews, or merging, use that instead of the defaults here and instead of a
+  personal skill that does the same job.
+- In a repo you haven't worked in this session, read its agent instructions and
+  the docs they point to before changing anything. If it has none, learn its
+  conventions from the README, recent commits, and recent PRs.
+
 ## Autonomy
 
 - Make reversible decisions yourself and tell me what you chose. Don't hand me
@@ -20,6 +30,8 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
   you change it, and call out any touched file I wouldn't expect.
 - Install nothing machine-wide unless the task needs it; list what you installed.
 - Clean up what you started: dev servers, containers, worktrees.
+- Keep working files that don't belong in the repo (handoffs, notes, drafts) in
+  the directory `~/agents/scripts/scratch-dir` prints, not in the repo.
 
 ## Code
 
@@ -49,11 +61,12 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 
 ## Bigger work
 
-- Plan in a spec under `docs/`, and keep it updated as you go so the next agent
-  can pick up from it.
+- Plan in a spec in the repo's spec location (`docs/` if it has none), and keep
+  it updated as you go so the next agent can pick up from it.
 - Ship one phase per PR, each with tests.
-- File follow-ups as tickets (Linear for personal work, Asana for work) instead of
-  leaving them in chat.
+- File follow-ups as tickets instead of leaving them in chat. Arcade work: the
+  tracker the repo's workflow uses (usually Linear; the monorepo requires a
+  Linear issue on every PR). Personal work: Asana.
 
 ## Tools
 

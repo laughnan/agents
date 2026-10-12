@@ -1,6 +1,6 @@
 ---
 name: pickup
-description: "Rehydrate context at session start: read .agents/handoff.md (from handoff), repo agent instructions, git status, and the branch PR, comments and CI via gh, then plan the next 2-3 actions. Use when the user says \"pickup\", \"pick up where we left off\", \"resume\", or \"continue from the handoff\"."
+description: "Rehydrate context at session start: read the last handoff (from handoff), repo agent instructions, git status, and the branch PR, comments and CI via gh, then plan the next 2-3 actions. Use when the user says \"pickup\", \"pick up where we left off\", \"resume\", or \"continue from the handoff\"."
 disable-model-invocation: true
 license: MIT
 metadata:
@@ -13,7 +13,7 @@ Rehydrate context quickly, then get moving.
 
 ## Steps
 
-1. **Handoff**: read `<repo root>/.agents/handoff.md` (written by `handoff`) if it exists. Note its timestamp and branch; treat everything in it as a claim to verify, not fact. If it names a different branch than the current one, say so.
+1. **Handoff**: read `handoff.md` in the directory `~/agents/scripts/scratch-dir` prints (written by `handoff`) if it exists. Note its timestamp and branch; treat everything in it as a claim to verify, not fact. If it names a different branch than the current one, say so.
 
 2. **Instructions**: read the repo's `AGENTS.md` / `CLAUDE.md` and any docs they point to that are relevant to the task.
 
