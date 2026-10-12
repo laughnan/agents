@@ -21,6 +21,14 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 - Install nothing machine-wide unless the task needs it; list what you installed.
 - Clean up what you started: dev servers, containers, worktrees.
 
+## Code
+
+- Keep it as simple as the task allows: the smallest change that solves the
+  problem, no speculative abstractions, options, or layers
+  (`principle-subtract-before-you-add`).
+- Keep PRs small enough to review in one sitting; split bigger work into a
+  stack with git-spice.
+
 ## Verify
 
 - Done means observed working: run it, load the page, read the real value. Say
@@ -43,7 +51,7 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 
 - Plan in a spec under `docs/`, and keep it updated as you go so the next agent
   can pick up from it.
-- Ship one phase per PR, each with tests; stack them when phases are separable.
+- Ship one phase per PR, each with tests.
 - File follow-ups as tickets (Linear for personal work, Asana for work) instead of
   leaving them in chat.
 
