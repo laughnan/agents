@@ -9,6 +9,7 @@
 # The checkout is the git worktree root containing path, or path itself outside
 # git, so each worktree gets its own directory.
 set -euo pipefail
+unset CDPATH # cd would echo the resolved path into the captures below
 
 repo=$(cd "$(dirname "$0")/.." && pwd -P)
 start=$(cd "${1:-.}" && pwd -P)
