@@ -1,6 +1,6 @@
 ---
 name: to-tickets
-description: "Break a plan, spec, or the current conversation into tracer-bullet vertical-slice tickets with explicit blocking edges, quiz the user on the breakdown, then publish to GitHub Issues, Linear, or local markdown files. Use when the user says \"to tickets\", \"break this into issues\", or \"split this into tasks\"."
+description: "Break a plan, spec, or the current conversation into tracer-bullet vertical-slice tickets with explicit blocking edges, quiz the user on the breakdown, then publish to GitHub Issues, Linear, Asana, or local markdown files. Use when the user says \"to tickets\", \"break this into issues\", or \"split this into tasks\"."
 disable-model-invocation: true
 license: MIT
 metadata:
@@ -50,10 +50,11 @@ Iterate until the user approves.
 
 ### 5. Publish
 
-Check the repo's `AGENTS.md` / `CLAUDE.md` for which tracker is used; if it doesn't say, ask. Show the final ticket content and get a yes before creating anything remotely. Publish in dependency order (blockers first) so later tickets can reference real identifiers.
+Check the repo's `AGENTS.md` / `CLAUDE.md` for which tracker is used, then the global rules (Arcade work: the repo's tracker; personal work: Asana); if neither settles it, ask. Show the final ticket content and get a yes before creating anything remotely. Publish in dependency order (blockers first) so later tickets can reference real identifiers.
 
 - **GitHub Issues**: one `gh issue create --title "<title>" --body-file <file>` per ticket. Add `--label` only for labels that already exist (`gh label list`). Put blockers in the "Blocked by" section as `#<number>`. If the source was an existing issue, reference it under "Parent".
 - **Linear**: only if a Linear MCP server is connected; use its issue-creation tool, and its native blocking / parent relations if it exposes them, otherwise the "Blocked by" section.
+- **Asana**: only if an Asana connector or tool is available; one task per ticket in the project the user names, using its dependency relations if it exposes them, otherwise the "Blocked by" section.
 - **Local files** (fallback): one file per ticket at `tickets/<feature-slug>/<NN>-<slug>.md` (or the repo's existing location), numbered from `01` in dependency order. Never one combined file.
 
 Do NOT close or modify any parent issue. Report the created URLs or paths, and which tickets are on the frontier (all blockers done) to start with.

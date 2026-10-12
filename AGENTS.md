@@ -64,7 +64,7 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 
 ## Bigger work
 
-- Plan in a spec in the repo's spec location (`docs/` if it has none), and keep
+- Plan in a spec in the repo's spec location (`docs/specs/` if it has none), and keep
   it updated as you go so the next agent can pick up from it.
 - Ship one phase per PR, each with tests.
 - File follow-ups as tickets instead of leaving them in chat. Arcade work: the
