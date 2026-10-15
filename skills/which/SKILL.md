@@ -31,6 +31,7 @@ nothing fits, say so; don't stretch a skill to cover it.
 - `blast-radius`: what a small-looking change could break elsewhere, proven by running code.
 
 **Planning**
+- `in-your-own-words`: play back the goal and the problem in your own words, then wait before any work.
 - `grill`: stress-test a vague plan until every decision is pinned down.
 - `to-spec`: turn the conversation into a spec on the tracker.
 - `to-tickets`: break a spec or plan into vertical-slice tickets with dependencies.
@@ -57,6 +58,7 @@ nothing fits, say so; don't stretch a skill to cover it.
 
 | Situation | Chain |
 |---|---|
+| Long or messy ask, before any work | `in-your-own-words`, then continue once they confirm |
 | Fuzzy idea to shipped feature | `grill` → `to-spec` → `to-tickets` → `tdd` per ticket → `autoreview` → `land-pr` |
 | Bug report | `diagnose` → `autoreview` → `land-pr` |
 | "Is this small change safe?" | `blast-radius`, then `autoreview` for a second opinion |

@@ -64,6 +64,7 @@ Not sure which to use? `/which`.
 - [`teach`](skills/teach/SKILL.md): plain explanation built on `how` + `why`
 - [`bro`](skills/bro/SKILL.md): ELI5, restate the last message or a topic with no jargon
 - [`blast-radius`](skills/blast-radius/SKILL.md): what a change could break, proven by running code
+- [`in-your-own-words`](skills/in-your-own-words/SKILL.md): play back the goal and the problem, then wait
 - [`grill`](skills/grill/SKILL.md): stress-test a plan until it's concrete
 - [`to-spec`](skills/to-spec/SKILL.md) / [`to-tickets`](skills/to-tickets/SKILL.md): conversation to spec to tickets
 - [`autoreview`](skills/autoreview/SKILL.md): cross-provider review (Claude ⇄ Codex)
