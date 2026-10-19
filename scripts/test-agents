@@ -1,0 +1,318 @@
+#!/usr/bin/env bash
+# Isolated regression tests. Never installs into the caller's HOME or commits.
+set -euo pipefail
+
+SOURCE=$(cd "$(dirname "$0")/.." && pwd)
+# Do not inherit shell startup hooks, Git overrides, or executable search paths
+# from the caller when running a fixture. All writes stay below this temp dir.
+SAFE_PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin
+for tool in bash git jq; do
+  PATH="$SAFE_PATH" command -v "$tool" >/dev/null || {
+    printf 'error: %s is required for scripts/test-agents\n' "$tool" >&2
+    exit 1
+  }
+done
+BASH_BIN=$(PATH="$SAFE_PATH" command -v bash)
+ROOT=$(mktemp -d "${TMPDIR:-/tmp}/agents-test.XXXXXX")
+trap 'rm -rf "$ROOT"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+LOG="$ROOT/command.log"
+checks=0
+
+fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+pass() { checks=$((checks + 1)); printf 'ok: %s\n' "$*"; }
+expect_success() {
+  local label=$1
+  shift
+  if ! "$@" >"$LOG" 2>&1; then cat "$LOG" >&2; fail "$label"; fi
+}
+expect_failure() {
+  local label=$1
+  shift
+  if "$@" >"$LOG" 2>&1; then cat "$LOG" >&2; fail "$label unexpectedly succeeded"; fi
+}
+isolated() {
+  env -i HOME="$TEST_HOME" PATH="$SAFE_PATH" TMPDIR="$ROOT" LC_ALL=C \
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null GIT_TERMINAL_PROMPT=0 "$@"
+}
+run_script() {
+  local script=$1
+  shift
+  isolated "$BASH_BIN" "$FIXTURE/scripts/$script" "$@"
+}
+fixture() {
+  TEST_HOME="$ROOT/$1 home"
+  FIXTURE="$TEST_HOME/agents"
+  DEST="$TEST_HOME/.claude/agents"
+  mkdir -p "$FIXTURE" "$TEST_HOME/.codex"
+  # Copy only repo-owned inputs, not .git, local overrides, or the real HOME.
+  local item
+  for item in AGENTS.md .githooks agents config hooks scripts skills; do
+    [[ -e "$SOURCE/$item" ]] || fail "missing source input: $item"
+    cp -R "$SOURCE/$item" "$FIXTURE/$item"
+  done
+  mkdir -p "$FIXTURE/local"
+  isolated git -C "$FIXTURE" init -q
+}
+# Compare contents, file types and symlink targets, including .git/config.
+# Logs and snapshots live outside TEST_HOME so they do not change the snapshot.
+snapshot() {
+  local path
+  while IFS= read -r path; do
+    printf '%s ' "${path#"$TEST_HOME"}"
+    if [[ -L "$path" ]]; then
+      printf 'link %s\n' "$(readlink "$path")"
+    elif [[ -f "$path" ]]; then
+      printf 'file '; cksum <"$path"
+    elif [[ -d "$path" ]]; then
+      printf 'directory\n'
+    else
+      printf 'other\n'
+    fi
+  done < <(find "$TEST_HOME" -print | LC_ALL=C sort)
+}
+assert_unchanged() {
+  snapshot >"$ROOT/after"
+  cmp -s "$ROOT/before" "$ROOT/after" || {
+    diff -u "$ROOT/before" "$ROOT/after" >&2 || true
+    fail "$1 changed the fixture"
+  }
+}
+assert_links() {
+  local name
+  for name in researcher reviewer; do
+    [[ -L "$DEST/$name.md" ]] || fail "$name is not a symlink"
+    [[ "$(readlink "$DEST/$name.md")" == "$FIXTURE/agents/$name.md" ]] \
+      || fail "$name does not point at its absolute canonical source"
+  done
+}
+set_field() {
+  local field=$1 value=$2
+  awk -v field="$field" -v value="$value" '
+    index($0, field ":") == 1 { print field ": " value; next } { print }
+  ' "$DEFINITION" >"$ROOT/definition.tmp"
+  mv "$ROOT/definition.tmp" "$DEFINITION"
+}
+remove_field() {
+  awk -v field="$1" 'index($0, field ":") != 1 { print }' \
+    "$DEFINITION" >"$ROOT/definition.tmp"
+  mv "$ROOT/definition.tmp" "$DEFINITION"
+}
+reject_definition() {
+  local label=$1
+  snapshot >"$ROOT/before"
+  expect_failure "$label validator" run_script validate-agents
+  expect_failure "$label install" run_script install
+  assert_unchanged "$label install"
+  expect_failure "$label doctor" run_script doctor
+  assert_unchanged "$label doctor"
+  cp "$ROOT/good-definition" "$DEFINITION"
+}
+guard() {
+  local tool=$1 key=$2 value=$3
+  jq -n --arg tool "$tool" --arg key "$key" --arg value "$value" \
+    '{tool_name: $tool, tool_input: {($key): $value}}' \
+    | isolated "$BASH_BIN" "$FIXTURE/hooks/guard-generated-config.sh"
+}
+expect_denied() {
+  local output
+  output=$(guard "$@")
+  jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null <<<"$output" \
+    || fail "guard did not deny $1: $3"
+}
+expect_allowed() {
+  local output
+  output=$(guard "$@")
+  [[ -z "$output" ]] || {
+    if jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null <<<"$output"; then
+      fail "guard incorrectly denied $1: $3"
+    fi
+  }
+}
+
+fixture fresh
+expect_success 'valid canonical definitions' run_script validate-agents
+snapshot >"$ROOT/before"
+expect_success 'fresh dry run' run_script install --dry-run
+assert_unchanged 'fresh dry run'
+pass 'fresh dry run leaves HOME and Git configuration untouched'
+
+expect_success 'fresh install' run_script install
+assert_links
+expect_success 'fresh doctor' run_script doctor
+pass 'fresh install creates two absolute per-file links and passes doctor'
+expect_success 'pre-commit integration' isolated "$BASH_BIN" -c \
+  'cd "$1" && exec "$1/.githooks/pre-commit"' _ "$FIXTURE"
+pass 'actual pre-commit hook validates the fixture without creating a commit'
+snapshot >"$ROOT/before"
+expect_success 'repeat install' run_script install
+assert_unchanged 'repeat install'
+expect_success 'installed dry run' run_script install --dry-run
+assert_unchanged 'installed dry run'
+pass 'repeat install and installed dry run are idempotent'
+
+ln -s "$FIXTURE/agents/retired.md" "$DEST/retired.md"
+ln -s "$TEST_HOME/missing-external.md" "$DEST/foreign.md"
+snapshot >"$ROOT/before"
+expect_failure 'stale owned-link doctor' run_script doctor
+grep '^FIX ' "$LOG" | grep -F "$DEST/retired.md" >/dev/null \
+  || fail 'broken owned agent link was not diagnosed as a problem'
+assert_unchanged 'stale owned-link doctor'
+expect_success 'stale-link dry run' run_script install --dry-run
+assert_unchanged 'stale-link dry run'
+expect_success 'stale-link install' run_script install
+[[ ! -e "$DEST/retired.md" && ! -L "$DEST/retired.md" ]] || fail 'owned stale link was not pruned'
+[[ -L "$DEST/foreign.md" && "$(readlink "$DEST/foreign.md")" == "$TEST_HOME/missing-external.md" ]] \
+  || fail 'unrelated broken external link changed'
+expect_success 'preserved external-link doctor' run_script doctor
+grep '^note ' "$LOG" | grep -F "$DEST/foreign.md" >/dev/null \
+  || fail 'unrelated broken external link was not noted'
+pass 'stale owned links fail doctor and are pruned; unrelated broken links survive with a note'
+
+fixture conflicts
+mkdir -p "$DEST"
+cp "$FIXTURE/agents/researcher.md" "$DEST/researcher.md"
+printf 'custom reviewer\n' >"$DEST/reviewer.md"
+ln "$DEST/researcher.md" "$ROOT/original-identical"
+ln "$DEST/reviewer.md" "$ROOT/original-custom"
+expect_success 'conflicting install' run_script install
+grep -qi warn "$LOG" || fail 'conflicting install did not warn'
+[[ ! -L "$DEST/researcher.md" && "$DEST/researcher.md" -ef "$ROOT/original-identical" ]] \
+  || fail 'identical real file was replaced'
+cmp -s "$FIXTURE/agents/researcher.md" "$DEST/researcher.md" || fail 'identical file changed'
+[[ ! -L "$DEST/reviewer.md" && "$DEST/reviewer.md" -ef "$ROOT/original-custom" ]] \
+  || fail 'custom real file was replaced'
+[[ "$(cat "$DEST/reviewer.md")" == 'custom reviewer' ]] || fail 'custom file changed'
+expect_failure 'conflict doctor' run_script doctor
+pass 'identical and custom real files are preserved and diagnosed'
+
+fixture external-conflicts
+mkdir -p "$DEST"
+printf 'external researcher\n' >"$TEST_HOME/external-researcher.md"
+ln -s "$TEST_HOME/external-researcher.md" "$DEST/researcher.md"
+ln -s "$TEST_HOME/absent-reviewer.md" "$DEST/reviewer.md"
+expect_success 'external conflict install' run_script install
+grep -qi warn "$LOG" || fail 'external conflicts did not warn'
+[[ "$(readlink "$DEST/researcher.md")" == "$TEST_HOME/external-researcher.md" ]] || fail 'external link changed'
+[[ "$(cat "$TEST_HOME/external-researcher.md")" == 'external researcher' ]] || fail 'external target changed'
+[[ "$(readlink "$DEST/reviewer.md")" == "$TEST_HOME/absent-reviewer.md" ]] || fail 'broken external conflict changed'
+expect_failure 'external conflict doctor' run_script doctor
+grep '^FIX ' "$LOG" | grep -F "$DEST/reviewer.md missing/incorrect link" >/dev/null \
+  || fail 'broken external canonical-name conflict was not diagnosed as a problem'
+rm "$DEST/reviewer.md"
+mkdir "$DEST/reviewer.md"
+printf 'keep me\n' >"$DEST/reviewer.md/sentinel"
+expect_success 'real directory conflict install' run_script install
+[[ -d "$DEST/reviewer.md" && ! -L "$DEST/reviewer.md" ]] || fail 'real directory conflict replaced'
+[[ "$(cat "$DEST/reviewer.md/sentinel")" == 'keep me' ]] || fail 'real directory conflict changed'
+pass 'live and broken external aliases plus real directory conflicts are preserved'
+
+fixture dot-segment-conflicts
+mkdir -p "$DEST"
+printf 'outside the canonical agents directory\n' >"$TEST_HOME/external.md"
+LIVE_TARGET="$FIXTURE/agents/../../external.md"
+BROKEN_TARGET="$FIXTURE/agents/../../missing-external.md"
+ln -s "$LIVE_TARGET" "$DEST/researcher.md"
+ln -s "$BROKEN_TARGET" "$DEST/reviewer.md"
+expect_success 'dot-segment conflict install' run_script install
+grep -qi warn "$LOG" || fail 'dot-segment conflicts did not warn'
+[[ "$(readlink "$DEST/researcher.md")" == "$LIVE_TARGET" ]] || fail 'live dot-segment alias replaced'
+[[ "$(readlink "$DEST/reviewer.md")" == "$BROKEN_TARGET" ]] || fail 'broken dot-segment alias replaced or pruned'
+[[ "$(cat "$TEST_HOME/external.md")" == 'outside the canonical agents directory' ]] \
+  || fail 'dot-segment external target changed'
+expect_failure 'dot-segment conflict doctor' run_script doctor
+for name in researcher reviewer; do
+  expect_allowed Write file_path "$DEST/$name.md"
+  expect_allowed Bash command "printf test > '$DEST/$name.md'"
+done
+pass 'live and broken dot-segment targets are external conflicts, not owned links'
+
+fixture linked-directory
+mkdir -p "$TEST_HOME/other-agents" "$TEST_HOME/.claude"
+printf 'external directory\n' >"$TEST_HOME/other-agents/sentinel"
+ln -s "$TEST_HOME/other-agents" "$DEST"
+expect_success 'linked agent directory install' run_script install
+grep -qi warn "$LOG" || fail 'linked agent directory did not warn'
+[[ "$(readlink "$DEST")" == "$TEST_HOME/other-agents" ]] || fail 'linked agent directory replaced'
+[[ "$(find "$TEST_HOME/other-agents" -mindepth 1 -print | wc -l | tr -d ' ')" == 1 ]] \
+  || fail 'installer wrote through linked agent directory'
+[[ "$(cat "$DEST/sentinel")" == 'external directory' ]] || fail 'linked agent directory changed'
+expect_failure 'linked directory doctor' run_script doctor
+pass 'symlinked agents directory is skipped without writing through it'
+
+fixture nondirectory
+mkdir -p "$TEST_HOME/.claude"
+printf 'not a directory\n' >"$DEST"
+expect_success 'non-directory agent destination install' run_script install
+grep -qi warn "$LOG" || fail 'non-directory agent destination did not warn'
+[[ -f "$DEST" && ! -L "$DEST" && "$(cat "$DEST")" == 'not a directory' ]] \
+  || fail 'non-directory agent destination changed'
+expect_failure 'non-directory destination doctor' run_script doctor
+pass 'non-directory agents destination is preserved and diagnosed'
+
+fixture invalid
+DEFINITION="$FIXTURE/agents/researcher.md"
+cp "$DEFINITION" "$ROOT/good-definition"
+remove_field tools
+reject_definition 'missing tools'
+remove_field permissionMode
+reject_definition 'missing permissionMode'
+for unsafe in Bash Write Edit MultiEdit Agent '*' 'mcp__*' 'mcp__example__tool'; do
+  set_field tools "Read, Grep, Glob, $unsafe"
+  reject_definition "unsafe tools $unsafe"
+done
+for mode in acceptEdits bypassPermissions; do
+  set_field permissionMode "$mode"
+  reject_definition "unsafe permissionMode $mode"
+done
+set_field name different-name
+reject_definition 'mismatched name'
+remove_field description
+reject_definition 'missing description'
+awk 'NR == 2 { print "tools: Read" } { print }' \
+  "$DEFINITION" >"$ROOT/definition.tmp"
+mv "$ROOT/definition.tmp" "$DEFINITION"
+reject_definition 'duplicate tools field'
+printf 'not frontmatter\n' >"$DEFINITION"
+reject_definition 'malformed frontmatter'
+# A valid opening fence without the closing fence must not be accepted.
+awk 'BEGIN { fences = 0 } $0 == "---" { fences++; if (fences == 2) next } { print }' \
+  "$DEFINITION" >"$ROOT/definition.tmp"
+mv "$ROOT/definition.tmp" "$DEFINITION"
+reject_definition 'unclosed frontmatter'
+expect_success 'restored valid definitions' run_script validate-agents
+pass 'malformed definitions and unsafe tools or modes fail validator, install and doctor without mutation'
+
+fixture guard
+expect_success 'guard fixture install' run_script install
+for tool in Write Edit MultiEdit; do
+  expect_denied "$tool" file_path "$DEST/researcher.md"
+  expect_denied "$tool" file_path '~/.claude/agents/researcher.md'
+  expect_allowed "$tool" file_path "$FIXTURE/agents/researcher.md"
+done
+expect_denied Bash command "printf test > '$DEST/researcher.md'"
+expect_denied Bash command 'printf test > "$HOME/.claude/agents/researcher.md"'
+expect_denied Bash command 'printf test > ~/.claude/agents/researcher.md'
+expect_allowed Bash command "cat '$DEST/researcher.md'"
+expect_allowed Bash command "printf test > '$FIXTURE/agents/researcher.md'"
+expect_allowed Write file_path "$DEST/researcher.md.bak"
+expect_allowed Bash command "printf test > '$DEST/researcher.md.bak'"
+rm "$DEST/reviewer.md"
+printf 'external definition\n' >"$TEST_HOME/external-reviewer.md"
+ln -s "$TEST_HOME/external-reviewer.md" "$DEST/reviewer.md"
+expect_allowed Write file_path "$DEST/reviewer.md"
+expect_allowed Bash command "printf test > '$DEST/reviewer.md'"
+rm "$DEST/reviewer.md"
+ln -s "$TEST_HOME/missing-reviewer.md" "$DEST/reviewer.md"
+expect_allowed Write file_path "$DEST/reviewer.md"
+expect_allowed Bash command "printf test > '$DEST/reviewer.md'"
+printf 'local definition\n' >"$DEST/local.md"
+expect_allowed Write file_path "$DEST/local.md"
+expect_allowed Bash command "printf test > '$DEST/local.md'"
+# Existing generated-file protection must still apply.
+expect_denied Write file_path "$TEST_HOME/.claude/settings.json"
+expect_denied Bash command 'printf test > "$HOME/.codex/AGENTS.md"'
+pass 'guard denies writes to owned aliases only; canonical, external and read-only access remain allowed'
+
+printf 'all %s agent regression groups passed\n' "$checks"

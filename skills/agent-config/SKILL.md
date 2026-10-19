@@ -1,6 +1,6 @@
 ---
 name: agent-config
-description: "Where agent configuration lives and how to change it. Use before editing Claude Code or Codex settings, hooks, permissions, env vars, global rules (CLAUDE.md / AGENTS.md), or personal skills, and when scripts/doctor reports drift. Edit sources in ~/agents, then regenerate."
+description: "Where agent configuration lives and how to change it. Use before editing Claude Code or Codex settings, hooks, permissions, env vars, global rules (CLAUDE.md / AGENTS.md), personal skills, or reusable agent roles, and when scripts/doctor reports drift. Edit sources in ~/agents, then regenerate."
 license: MIT
 metadata:
   source: original
@@ -22,6 +22,7 @@ the edit anyway.
 | Global rules for every laptop | `~/agents/AGENTS.md` | `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` |
 | Global rules for this laptop | `~/agents/local/AGENTS.md` (gitignored) | same |
 | A hook script | `~/agents/hooks/<name>.sh`, registered in one of the settings files above as `__AGENTS_HOME__/hooks/<name>.sh` | `~/.claude/hooks/` |
+| A reusable Claude subagent | `~/agents/agents/<name>.md` (see `docs/agents.md`) | `~/.claude/agents/<name>.md` (managed symlink) |
 | A personal skill | `~/agents/skills/<name>/SKILL.md`, and add it to `skills/which/SKILL.md` | `~/.claude/skills/`, `~/.agents/skills/` (symlinks) |
 
 Shared or local? Shared unless it depends on this machine: local paths, tools only
@@ -44,6 +45,13 @@ remove a shared array entry; change the shared file for that.
 ~/agents/scripts/install             # apply (backs up anything it replaces)
 ~/agents/scripts/doctor              # confirm everything matches
 ```
+
+Agent roles are separate from skills. The installer owns only links into this repo's
+`agents/` directory and never replaces an existing real agent file or an external
+link. Move a conflict aside yourself only after deciding which definition to keep.
+Do not edit a managed alias: it writes through to the canonical source. The guard
+blocks common direct writes; it is not a sandbox. Role usage and Codex compatibility
+are documented in `docs/agents.md`.
 
 New settings take effect in new sessions. If you changed a shared file or a skill,
 tell the user to commit and push `~/agents` so other laptops get it with

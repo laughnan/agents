@@ -46,6 +46,11 @@ nothing fits, say so; don't stretch a skill to cover it.
 - `autoreview`: independent review by the other provider (Claude to Codex or back).
 - `land-pr`: rebase, full check gate, merge, verify MERGED.
 
+The `reviewer` agent is not a slash-command workflow: explicitly request it only
+for a read-only assessment of supplied requirements, exact revisions, and a raw
+patch. Use `lean-pr-review` for the PR walkthrough and `autoreview` for the other
+provider's independent review. See [role handoffs](../../docs/agents.md#reviewer).
+
 **Improving the setup**
 - `retro`: after a session, propose improvements to rules, checks, and skills.
 - `capture-learnings`: turn review feedback and corrections into durable rules.

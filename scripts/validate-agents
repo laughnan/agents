@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Validate this repo's deliberately small, flat Claude subagent schema.
+# This is a lint check, not a YAML parser or a runtime security boundary.
+set -uo pipefail
+source "$(dirname "$0")/lib.sh"
+
+errors=0
+count=0
+err() { printf 'error: %s\n' "$*" >&2; errors=$((errors + 1)); }
+[[ -d "$REPO/agents" ]] || { err "agents/ directory missing"; exit 1; }
+
+while IFS= read -r file; do
+  count=$((count + 1))
+  stem=$(basename "$file" .md)
+  rel="agents/$stem.md"
+  # Keep supported frontmatter intentionally simple. Reject duplicate/unknown
+  # fields, multiline values, and missing delimiters rather than guessing YAML.
+  if ! awk '
+    NR == 1 { if ($0 != "---") exit 1; next }
+    !closed && $0 == "---" { closed=1; next }
+    !closed {
+      if ($0 !~ /^(name|description|tools|model|permissionMode): .+$/) exit 1
+      key=$0; sub(/:.*/, "", key)
+      if (seen[key]++) exit 1
+      next
+    }
+    closed && $0 ~ /[^[:space:]]/ { body=1 }
+    END { if (!closed || !body) exit 1 }
+  ' "$file"; then
+    err "$rel: expected unique supported frontmatter fields, closing ---, and a body"
+    continue
+  fi
+  name=$(frontmatter_field "$file" name)
+  desc=$(frontmatter_field "$file" description)
+  tool_list=$(frontmatter_field "$file" tools)
+  [[ "$name" == "$stem" && "$name" =~ ^[a-z0-9][a-z0-9-]*$ ]] || err "$rel: name must match its lowercase kebab-case filename"
+  [[ "$desc" =~ ^\"[^\"]+\"$ ]] || err "$rel: description must be a nonempty double-quoted single line"
+  [[ "$(frontmatter_field "$file" model)" == inherit ]] || err "$rel: model must be inherit"
+  [[ "$(frontmatter_field "$file" permissionMode)" == default ]] || err "$rel: permissionMode must be default"
+  [[ -n "$tool_list" && "$tool_list" != ,* && "$tool_list" != *, && "$tool_list" != *,,* ]] || err "$rel: tools must be an explicit nonempty comma-separated allowlist"
+  IFS=',' read -r -a agent_tools <<<"$tool_list"
+  for tool in "${agent_tools[@]}"; do
+    tool=$(printf '%s' "$tool" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+    case "$tool" in
+      Read|Glob|Grep) ;;
+      WebSearch|WebFetch)
+        [[ "$name" == researcher ]] || err "$rel: web tools belong only to researcher" ;;
+      *) err "$rel: tool '$tool' is outside the supported allowlist" ;;
+    esac
+  done
+done < <(agent_files)
+
+(( count )) || err "agents/ has no role definitions"
+(( errors )) && { echo "$errors agent error(s)" >&2; exit 1; }
+echo "agents ok ($count)"

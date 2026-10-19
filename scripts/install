@@ -41,8 +41,9 @@ command -v jq >/dev/null || { echo "error: jq is required (brew install jq)" >&2
 [[ "$REPO" == "$HOME/agents" ]] || warn "repo is at $REPO, not ~/agents; hooks will point at $REPO"
 
 # 1. Git hooks and validation
-act git -C "$REPO" config core.hooksPath .githooks
 "$REPO/scripts/validate-skills"
+"$REPO/scripts/validate-agents"
+act git -C "$REPO" config core.hooksPath .githooks
 
 # 2. Skills: flat per-skill symlinks into each harness's skill dir
 for dest in "${SKILL_DESTS[@]}"; do
@@ -81,6 +82,39 @@ for dest in "${SKILL_DESTS[@]}"; do
     esac
   done
 done
+
+# Claude subagents: own only links into this repo, never real files or other links.
+# Do not follow an externally managed directory symlink and write through it.
+if [[ -L "$CLAUDE_AGENTS" || ( -e "$CLAUDE_AGENTS" && ! -d "$CLAUDE_AGENTS" ) ]]; then
+  warn "$CLAUDE_AGENTS is not a real directory; left alone (move it aside and rerun)"
+else
+  act mkdir -p "$CLAUDE_AGENTS"
+  while IFS= read -r src; do
+    target="$CLAUDE_AGENTS/$(basename "$src")"
+    if [[ -L "$target" ]]; then
+      current=$(readlink "$target")
+      [[ "$current" == "$src" ]] && continue
+      if owned_agent_target "$current"; then
+        act ln -sfn "$src" "$target"
+        did "relinked $target"
+      else
+        warn "$target is not a managed agent link; left alone (move it aside and rerun)"
+      fi
+    elif [[ -e "$target" ]]; then
+      warn "$target already exists; left alone (move it aside and rerun)"
+    else
+      act ln -s "$src" "$target"
+      did "linked  $target"
+    fi
+  done < <(agent_files)
+  for link in "$CLAUDE_AGENTS"/*.md; do
+    [[ -L "$link" ]] || continue
+    if owned_agent_target "$(readlink "$link")" && [[ ! -e "$link" ]]; then
+      act rm "$link"
+      did "pruned  $link"
+    fi
+  done
+fi
 
 # 3. Claude Code settings (generated) and global rules
 settings=$(render_json_object render_claude_settings) \

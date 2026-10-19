@@ -1,7 +1,9 @@
-# Shared helpers for install, doctor, and validate-skills. Source, don't run.
+# Shared helpers for install, doctor, and validators. Source, don't run.
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL_DESTS=("$HOME/.claude/skills" "$HOME/.agents/skills")
+
+CLAUDE_AGENTS="$HOME/.claude/agents"
 
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 CLAUDE_MD="$HOME/.claude/CLAUDE.md"
@@ -14,6 +16,18 @@ LOCAL_AGENTS_MD="$REPO/local/AGENTS.md"
 
 skill_dirs() {
   find "$REPO/skills" -mindepth 2 -maxdepth 2 -name SKILL.md -exec dirname {} \; | sort
+}
+
+agent_files() {
+  find "$REPO/agents" -maxdepth 1 -type f -name '*.md' | sort
+}
+
+# Only own the exact flat absolute target shape install emits. Prefix matching
+# alone would also claim links that escape agents/ through ../ or subdirectories.
+owned_agent_target() {
+  [[ "$1" == "$REPO/agents/"* ]] || return 1
+  local name=${1#"$REPO/agents/"}
+  [[ "$name" =~ ^[a-z0-9][a-z0-9-]*\.md$ ]]
 }
 
 # Shared settings deep-merged with local ones: objects merge, arrays
