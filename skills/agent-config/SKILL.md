@@ -23,7 +23,7 @@ the edit anyway.
 | Global rules for this laptop | `~/agents/local/AGENTS.md` (gitignored) | same |
 | A hook script | `~/agents/hooks/<name>.sh`, registered in one of the settings files above as `__AGENTS_HOME__/hooks/<name>.sh` | `~/.claude/hooks/` |
 | A reusable Claude subagent | `~/agents/agents/<name>.md` (see `docs/agents.md`) | `~/.claude/agents/<name>.md` (managed symlink) |
-| A personal skill | `~/agents/skills/<name>/SKILL.md`, and add it to `skills/which/SKILL.md` | `~/.claude/skills/`, `~/.agents/skills/` (symlinks) |
+| A personal skill | `~/agents/skills/<name>/SKILL.md`, and add it to `skills/which/SKILL.md` | `~/.claude/skills/`, `~/.agents/skills/`, `~/.cursor/skills/` (symlinks) |
 
 Shared or local? Shared unless it depends on this machine: local paths, tools only
 installed here, work vs personal identity, or a safety relaxation the user wants on

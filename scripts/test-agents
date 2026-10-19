@@ -140,8 +140,11 @@ pass 'fresh dry run leaves HOME and Git configuration untouched'
 
 expect_success 'fresh install' run_script install
 assert_links
+[[ "$(readlink "$TEST_HOME/.cursor/skills/which")" == "$FIXTURE/skills/which" ]] \
+  || fail 'fresh install did not link Cursor user skills'
+[[ ! -e "$TEST_HOME/.cursor/skills-cursor" ]] || fail 'install wrote Cursor-managed skills-cursor'
 expect_success 'fresh doctor' run_script doctor
-pass 'fresh install creates two absolute per-file links and passes doctor'
+pass 'fresh install creates two absolute per-file links, links Cursor skills, and passes doctor'
 expect_success 'pre-commit integration' isolated "$BASH_BIN" -c \
   'cd "$1" && exec "$1/.githooks/pre-commit"' _ "$FIXTURE"
 pass 'actual pre-commit hook validates the fixture without creating a commit'
@@ -314,5 +317,107 @@ expect_allowed Bash command "printf test > '$DEST/local.md'"
 expect_denied Write file_path "$TEST_HOME/.claude/settings.json"
 expect_denied Bash command 'printf test > "$HOME/.codex/AGENTS.md"'
 pass 'guard denies writes to owned aliases only; canonical, external and read-only access remain allowed'
+
+commit_fixture() {
+  isolated git -C "$FIXTURE" add -A
+  isolated git -C "$FIXTURE" \
+    -c user.email=agents-test@example.com \
+    -c user.name='agents test' \
+    -c commit.gpgsign=false \
+    commit -q -m fixture
+}
+run_boot() {
+  env -i \
+    HOME="$BOOT_HOME" \
+    PATH="${BOOT_PATH:-$SAFE_PATH}" \
+    TMPDIR="$ROOT" \
+    LC_ALL=C \
+    GIT_CONFIG_NOSYSTEM=1 \
+    GIT_CONFIG_GLOBAL=/dev/null \
+    GIT_TERMINAL_PROMPT=0 \
+    AGENTS_REPO_URL="$FIXTURE" \
+    APT_LOG="${APT_LOG:-}" \
+    JQ_BIN="${JQ_BIN:-}" \
+    TOOL_BIN="${TOOL_BIN:-}" \
+    "$BASH_BIN" "$@"
+}
+pipe_bootstrap() {
+  run_boot -c 'cat -- "$1" | "$2"' _ "$FIXTURE/scripts/bootstrap" "$BASH_BIN"
+}
+snapshot_boot() {
+  local path
+  while IFS= read -r path; do
+    case "$path" in
+      "$BOOT_HOME/agents/.git"|"$BOOT_HOME/agents/.git/"*) continue ;;
+    esac
+    printf '%s ' "${path#"$BOOT_HOME"}"
+    if [[ -L "$path" ]]; then
+      printf 'link %s\n' "$(readlink "$path")"
+    elif [[ -f "$path" ]]; then
+      printf 'file '; cksum <"$path"
+    elif [[ -d "$path" ]]; then
+      printf 'directory\n'
+    else
+      printf 'other\n'
+    fi
+  done < <(find "$BOOT_HOME" -print | LC_ALL=C sort)
+}
+
+fixture bootstrap
+commit_fixture
+BOOT_HOME="$ROOT/boot home"
+TOOL_BIN="$ROOT/boot-tools"
+APT_LOG="$ROOT/apt.log"
+JQ_BIN=$(PATH="$SAFE_PATH" command -v jq)
+mkdir -p "$BOOT_HOME" "$TOOL_BIN"
+for cmd in bash git find dirname basename mkdir ln rm cp cat date diff readlink grep sed awk sort head tr mv wc id chmod; do
+  ln -s "$(PATH="$SAFE_PATH" command -v "$cmd")" "$TOOL_BIN/$cmd"
+done
+cat >"$TOOL_BIN/sudo" <<'EOF'
+#!/bin/bash
+[[ "${1:-}" == "-n" ]] || { echo "sudo tried to prompt" >&2; exit 99; }
+shift
+exec "$@"
+EOF
+cat >"$TOOL_BIN/apt-get" <<'EOF'
+#!/bin/bash
+printf '%s\n' "$*" >>"$APT_LOG"
+case " $* " in
+  *" install "*) ln -sfn "$JQ_BIN" "$TOOL_BIN/jq" ;;
+esac
+exit 0
+EOF
+chmod 755 "$TOOL_BIN/sudo" "$TOOL_BIN/apt-get"
+BOOT_PATH="$TOOL_BIN"
+: >"$APT_LOG"
+expect_success 'piped bootstrap without jq' pipe_bootstrap
+grep -F 'update -y' "$APT_LOG" >/dev/null || fail 'missing jq did not apt-get update -y'
+grep -F 'install -y git jq ca-certificates' "$APT_LOG" >/dev/null || fail 'missing jq did not apt-get install non-interactively'
+[[ -x "$TOOL_BIN/jq" ]] || fail 'package install did not provide jq'
+for dest in .claude/skills .agents/skills .cursor/skills; do
+  [[ "$(readlink "$BOOT_HOME/$dest/which")" == "$BOOT_HOME/agents/skills/which" ]] \
+    || fail "$dest was not linked at the cloned skill"
+  [[ -f "$BOOT_HOME/$dest/which/SKILL.md" ]] || fail "$dest link does not resolve to SKILL.md"
+done
+[[ ! -e "$BOOT_HOME/.cursor/skills-cursor" ]] || fail 'bootstrap wrote Cursor-managed skills-cursor'
+expect_success 'bootstrap doctor' run_boot "$BOOT_HOME/agents/scripts/doctor"
+grep -F 'all good' "$LOG" >/dev/null || fail 'doctor did not pass after bootstrap'
+grep -F "$BOOT_HOME/.cursor/skills has every repo skill" "$LOG" >/dev/null \
+  || fail 'doctor did not confirm Cursor skills'
+find "$BOOT_HOME" -name '*.bak-agents-*' | grep -q . && fail 'fresh bootstrap backed files up'
+snapshot_boot >"$ROOT/boot-before"
+: >"$APT_LOG"
+expect_success 'repeat piped bootstrap' pipe_bootstrap
+[[ ! -s "$APT_LOG" ]] || fail 'repeat bootstrap tried to install packages again'
+snapshot_boot >"$ROOT/boot-after"
+cmp -s "$ROOT/boot-before" "$ROOT/boot-after" || {
+  diff -u "$ROOT/boot-before" "$ROOT/boot-after" >&2 || true
+  fail 'repeat bootstrap changed the installed tree'
+}
+if grep -E 'linked|wrote|backed up|relinked|pruned|replaced' "$LOG" >/dev/null; then
+  fail 'repeat bootstrap rewrote install state'
+fi
+expect_success 'repeat bootstrap doctor' run_boot "$BOOT_HOME/agents/scripts/doctor"
+pass 'piped bootstrap installs missing jq without prompting, links Cursor skills, and is idempotent'
 
 printf 'all %s agent regression groups passed\n' "$checks"

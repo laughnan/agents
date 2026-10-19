@@ -37,7 +37,7 @@ write_generated() { # target content
   say "wrote   $target"
 }
 
-command -v jq >/dev/null || { echo "error: jq is required (brew install jq)" >&2; exit 1; }
+command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
 [[ "$REPO" == "$HOME/agents" ]] || warn "repo is at $REPO, not ~/agents; hooks will point at $REPO"
 
 # 1. Git hooks and validation
