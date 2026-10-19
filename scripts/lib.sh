@@ -1,7 +1,9 @@
 # Shared helpers for install, doctor, and validators. Source, don't run.
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SKILL_DESTS=("$HOME/.claude/skills" "$HOME/.agents/skills")
+# Cursor reads ~/.cursor/skills, plus ~/.claude/skills and ~/.agents/skills for
+# compatibility. ~/.cursor/skills-cursor is Cursor-managed; never install there.
+SKILL_DESTS=("$HOME/.claude/skills" "$HOME/.agents/skills" "$HOME/.cursor/skills")
 
 CLAUDE_AGENTS="$HOME/.claude/agents"
 

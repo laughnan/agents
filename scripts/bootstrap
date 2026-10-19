@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Clone this repo to ~/agents (or fast-forward it) and run scripts/install.
+# Non-interactive and safe to repeat, including as:
+#
+#   curl -fsSL https://raw.githubusercontent.com/laughnan/agents/main/scripts/bootstrap | bash
+#
+# The body is a function so bash reads a piped script to the end before git or
+# apt can touch stdin. Overrides for tests: AGENTS_HOME, AGENTS_REPO_URL.
+set -euo pipefail
+
+main() {
+  local url="${AGENTS_REPO_URL:-https://github.com/laughnan/agents.git}"
+  local dest="${AGENTS_HOME:-$HOME/agents}"
+
+  export DEBIAN_FRONTEND=noninteractive
+  export NEEDRESTART_MODE=a
+  export GIT_TERMINAL_PROMPT=0
+  export GIT_EDITOR=true
+  export GIT_MERGE_AUTOEDIT=no
+
+  ensure_tools
+  sync_repo "$url" "$dest"
+  "$dest/scripts/install"
+}
+
+ensure_tools() {
+  if command -v git >/dev/null && command -v jq >/dev/null; then
+    return 0
+  fi
+  if command -v apt-get >/dev/null; then
+    local apt
+    if [[ "$(id -u)" -eq 0 ]]; then
+      apt=(apt-get)
+    else
+      command -v sudo >/dev/null || { echo "error: sudo is required to install git and jq" >&2; exit 1; }
+      apt=(sudo -n apt-get)
+    fi
+    "${apt[@]}" update -y </dev/null
+    "${apt[@]}" install -y git jq ca-certificates </dev/null
+  elif command -v brew >/dev/null; then
+    NONINTERACTIVE=1 HOMEBREW_NO_AUTO_UPDATE=1 brew install git jq </dev/null
+  else
+    echo "error: git and jq are required" >&2
+    exit 1
+  fi
+  if ! command -v git >/dev/null || ! command -v jq >/dev/null; then
+    echo "error: git and jq are still missing after install" >&2
+    exit 1
+  fi
+}
+
+sync_repo() {
+  local url=$1 dest=$2
+  if [[ -d "$dest/.git" ]]; then
+    local origin
+    origin=$(git -C "$dest" remote get-url origin)
+    if [[ "$origin" != "$url" ]]; then
+      echo "error: $dest already exists with origin $origin, not $url" >&2
+      exit 1
+    fi
+    git -C "$dest" pull --ff-only </dev/null
+    return
+  fi
+  if [[ -e "$dest" ]]; then
+    echo "error: $dest exists and is not a git checkout of this repo" >&2
+    exit 1
+  fi
+  mkdir -p "$(dirname "$dest")"
+  git clone "$url" "$dest" </dev/null
+}
+
+main "$@"

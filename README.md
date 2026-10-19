@@ -27,12 +27,31 @@ cp ~/agents/local/AGENTS.md.example ~/agents/local/AGENTS.md
 
 After any `git pull`, rerun `scripts/install`.
 
+## Cloud agents
+
+Cursor does not copy laptop skills onto a cloud VM. Install this repo there
+before the agent starts work:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/laughnan/agents/main/scripts/bootstrap | bash
+```
+
+`scripts/bootstrap` clones to `~/agents` (or fast-forwards it) and runs
+`scripts/install`. Safe to run again. Another repo can commit the same command
+in `.cursor/environment.json`:
+
+```json
+{
+  "install": "curl -fsSL https://raw.githubusercontent.com/laughnan/agents/main/scripts/bootstrap | bash"
+}
+```
+
 ## What install does
 
 | Source | Becomes |
 |---|---|
 | `agents/<name>.md` | symlinks in `~/.claude/agents/` (Claude Code only) |
-| `skills/<name>/` | symlinks in `~/.claude/skills/` and `~/.agents/skills/` |
+| `skills/<name>/` | symlinks in `~/.claude/skills/`, `~/.agents/skills/`, and `~/.cursor/skills/` |
 | `config/claude/settings.json` + `local/claude.settings.json` | generated `~/.claude/settings.json` |
 | `AGENTS.md` + `local/AGENTS.md` | generated `~/.claude/CLAUDE.md` (imports), `~/.codex/AGENTS.md` |
 | `.githooks/` | this repo's pre-commit (runs `validate-skills` and `validate-agents`) |
@@ -54,7 +73,7 @@ hooks/               Claude Code hook scripts
 agents/<name>.md     canonical Claude Code subagent definitions
 docs/agents.md       role usage, permissions, and Codex compatibility
 skills/<name>/       one flat directory per skill
-scripts/             install, doctor, validators, test-agents, scratch-dir
+scripts/             install, bootstrap, doctor, validators, test-agents, scratch-dir
 scratch/             per-checkout agent working files (gitignored)
 ```
 
