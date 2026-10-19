@@ -27,6 +27,24 @@ cp ~/agents/local/AGENTS.md.example ~/agents/local/AGENTS.md
 
 After any `git pull`, rerun `scripts/install`.
 
+## Claude Code cloud environments
+
+Cloud sessions don't carry over `~/.claude/`, so each environment installs this
+repo itself:
+
+1. At claude.ai/code, edit the environment and paste `scripts/cloud-setup` into
+   **Setup script**. It clones this repo to `~/agents` and runs `scripts/install`.
+2. The setup result is cached for about 7 days. A `SessionStart` hook in
+   `config/claude/settings.json` pulls and reinstalls at the start of every cloud
+   session, so pushed changes show up without waiting. It does nothing locally
+   (`CLAUDE_CODE_REMOTE` is unset). Settings and hook changes apply from the next
+   session; skill changes apply right away.
+
+The VM can only clone this repo if it's public or attached to the session.
+
+Check a new environment with `/context` (Memory should list
+`/root/.claude/CLAUDE.md`), `/which`, and `~/agents/scripts/doctor`.
+
 ## What install does
 
 | Source | Becomes |
@@ -54,7 +72,7 @@ hooks/               Claude Code hook scripts
 agents/<name>.md     canonical Claude Code subagent definitions
 docs/agents.md       role usage, permissions, and Codex compatibility
 skills/<name>/       one flat directory per skill
-scripts/             install, doctor, validators, test-agents, scratch-dir
+scripts/             install, doctor, validators, test-agents, scratch-dir, cloud-setup
 scratch/             per-checkout agent working files (gitignored)
 ```
 

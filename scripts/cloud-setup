@@ -1,0 +1,21 @@
+#!/bin/bash
+# Setup script for Claude Code cloud environments (claude.ai/code). Paste this
+# file's contents into the environment's "Setup script" field. It runs as root
+# before Claude Code starts, so cloud sessions get the same skills, settings,
+# hooks, and global rules as a laptop.
+#
+# Must always exit 0: a failing setup script blocks the session. The output is
+# snapshotted for about 7 days; the SessionStart hook in
+# config/claude/settings.json pulls and reinstalls on every new session.
+set -uo pipefail
+
+command -v jq >/dev/null || { apt-get update -qq && apt-get install -y -qq jq; } || true
+
+if [ -d "$HOME/agents/.git" ]; then
+  git -C "$HOME/agents" pull --ff-only -q || true
+else
+  git clone -q --depth 1 https://github.com/laughnan/agents "$HOME/agents" || exit 0
+fi
+
+"$HOME/agents/scripts/install" || true
+exit 0

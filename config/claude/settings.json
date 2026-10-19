@@ -4,6 +4,17 @@
   },
   "theme": "auto",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" = true ] || exit 0; git -C __AGENTS_HOME__ pull --ff-only -q && __AGENTS_HOME__/scripts/install >/dev/null; exit 0"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
