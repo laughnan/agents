@@ -1,7 +1,8 @@
 # agents
 
 My agent setup, synced across laptops: global rules, Claude Code settings and
-hooks, and a flat, hand-picked set of skills that work in Claude Code and Codex.
+hooks, reusable Claude Code agent roles, and a flat, hand-picked set of skills
+that work in Claude Code and Codex.
 
 Inspired by [pstack](https://github.com/cursor/plugins/tree/main/pstack),
 [mattpocock/skills](https://github.com/mattpocock/skills), and
@@ -30,15 +31,18 @@ After any `git pull`, rerun `scripts/install`.
 
 | Source | Becomes |
 |---|---|
+| `agents/<name>.md` | symlinks in `~/.claude/agents/` (Claude Code only) |
 | `skills/<name>/` | symlinks in `~/.claude/skills/` and `~/.agents/skills/` |
 | `config/claude/settings.json` + `local/claude.settings.json` | generated `~/.claude/settings.json` |
 | `AGENTS.md` + `local/AGENTS.md` | generated `~/.claude/CLAUDE.md` (imports), `~/.codex/AGENTS.md` |
-| `.githooks/` | this repo's pre-commit (runs `validate-skills`) |
+| `.githooks/` | this repo's pre-commit (runs `validate-skills` and `validate-agents`) |
 
 Generated files are never edited by hand: `hooks/guard-generated-config.sh` blocks
 agents from doing it, and `scripts/doctor` reports drift. Anything install replaces
 is backed up as `<file>.bak-agents-<timestamp>`. It never touches skill directories
-it doesn't own (for example Reflect's app-managed skills).
+it doesn't own (for example Reflect's app-managed skills). For agents, it also leaves
+all real files and external links alone, even if their content matches. Stale links
+into this checkout are pruned; a symlinked agent destination directory is left alone.
 
 ## Layout
 
@@ -47,10 +51,22 @@ AGENTS.md            global rules for every harness
 config/claude/       shared Claude Code settings (__AGENTS_HOME__ = repo path)
 local/               per-laptop overrides; only *.example is committed
 hooks/               Claude Code hook scripts
+agents/<name>.md     canonical Claude Code subagent definitions
+docs/agents.md       role usage, permissions, and Codex compatibility
 skills/<name>/       one flat directory per skill
-scripts/             install, doctor, validate-skills, scratch-dir
+scripts/             install, doctor, validators, test-agents, scratch-dir
 scratch/             per-checkout agent working files (gitignored)
 ```
+
+## Agent roles
+
+- [`researcher`](agents/researcher.md): sourced answers, with observations and inferences separated
+- [`reviewer`](agents/reviewer.md): independent requirements-and-diff review; no source edits
+
+These are workers with separate context and explicit tool allowlists, not slash
+commands or a new workflow engine. Claude discovers them after install. Codex does
+not consume Claude frontmatter. See [usage and compatibility](docs/agents.md),
+including manual Codex reuse, safe handoffs, and test commands.
 
 ## Skills
 

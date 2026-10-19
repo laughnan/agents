@@ -26,6 +26,24 @@ for dest in "${SKILL_DESTS[@]}"; do
   done
 done
 
+# Claude subagents
+if "$REPO/scripts/validate-agents"; then ok "agent definitions valid"; else bad "agent definitions invalid"; fi
+if [[ -L "$CLAUDE_AGENTS" || ( -e "$CLAUDE_AGENTS" && ! -d "$CLAUDE_AGENTS" ) ]]; then
+  bad "$CLAUDE_AGENTS is not a real directory; install will leave it alone"
+else
+  while IFS= read -r src; do
+    target="$CLAUDE_AGENTS/$(basename "$src")"
+    if [[ "$(readlink "$target" 2>/dev/null)" == "$src" ]]; then
+      ok "$target -> repo agent"
+    else
+      bad "$target missing/incorrect link (move conflicting file aside, then run scripts/install)"
+    fi
+  done < <(agent_files)
+  for link in "$CLAUDE_AGENTS"/*.md; do
+    [[ -L "$link" && ! -e "$link" ]] && bad "broken agent link $link"
+  done
+fi
+
 # Generated files
 check_generated() { # target expected label
   if [[ ! -f "$1" ]]; then bad "$1 missing (run scripts/install)"; return; fi
