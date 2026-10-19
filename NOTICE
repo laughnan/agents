@@ -29,3 +29,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Original workflow inspired by Teal Larson
+---------------------------------------
+
+The lean-pr-review skill is an original implementation inspired by the review
+workflow in teallarson/skills, inspected at commit
+34fff3d853a452bc4ca34282971369639035e147:
+https://github.com/teallarson/skills/tree/34fff3d853a452bc4ca34282971369639035e147/skills/lean-pr-review
+
+The upstream README declares MIT; no separate license file was present in that
+revision. No upstream prose, templates, scripts, or assets were copied.

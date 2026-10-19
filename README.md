@@ -66,6 +66,7 @@ Not sure which to use? `/which`.
 - [`blast-radius`](skills/blast-radius/SKILL.md): what a change could break, proven by running code
 - [`grill`](skills/grill/SKILL.md): stress-test a plan until it's concrete
 - [`to-spec`](skills/to-spec/SKILL.md) / [`to-tickets`](skills/to-tickets/SKILL.md): conversation to spec to tickets
+- [`lean-pr-review`](skills/lean-pr-review/SKILL.md): concern-by-concern PR walkthrough, evidence-backed verdict, optional local HTML report
 - [`autoreview`](skills/autoreview/SKILL.md): cross-provider review (Claude ⇄ Codex)
 - [`land-pr`](skills/land-pr/SKILL.md): rebase, gate, merge, verify MERGED
 - [`retro`](skills/retro/SKILL.md): improve the agent setup after a session
