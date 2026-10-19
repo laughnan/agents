@@ -28,6 +28,10 @@ Missing targets owned by this checkout are pruned. Edit canonical files, not
 installed aliases; the existing guard catches common writes to managed aliases.
 It is a convenience guard, not a security boundary.
 
+Doctor reports unrelated broken external agent links as notes, not setup failures.
+A conflict at a required role name still fails the check because that repo role is
+not installed; broken links owned by this checkout also fail until repaired.
+
 Claude Code reads Markdown roles in `~/.claude/agents/` or `.claude/agents/`.
 Project definitions can shadow personal names. Restart a running session if the
 agents directory was newly created, then explicitly request the role by name.
@@ -63,7 +67,21 @@ state any verification limits.”
 Do not attach the implementer's explanation as the source of truth. The role can
 read code and a supplied patch, but cannot run git, tests, or arbitrary commands.
 The caller remains responsible for execution and for obtaining a new review if
-the reviewed revision changes. This is not a replacement for CI or autoreview.
+the reviewed revision changes. This is not a replacement for CI.
+
+Choose the review entry point deliberately:
+
+- [`lean-pr-review`](../skills/lean-pr-review/SKILL.md) is the current-session PR
+  walkthrough or full review workflow; it establishes the diff and checks.
+- [`autoreview`](../skills/autoreview/SKILL.md) obtains an independent review from
+  the other provider.
+- `reviewer` is an explicitly requested, read-only worker for an already-prepared
+  requirements-and-patch handoff. It does not replace either workflow or execute
+  their verification steps.
+
+Claude uses descriptions to select workers; the explicit-use wording guides that
+selection, not a hard invocation restriction. The worker must request missing
+inputs and report incomplete evidence rather than guess or issue a clean verdict.
 
 ## Permission limits
 

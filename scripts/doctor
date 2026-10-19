@@ -40,7 +40,12 @@ else
     fi
   done < <(agent_files)
   for link in "$CLAUDE_AGENTS"/*.md; do
-    [[ -L "$link" && ! -e "$link" ]] && bad "broken agent link $link"
+    [[ -L "$link" && ! -e "$link" ]] || continue
+    if owned_agent_target "$(readlink "$link")"; then
+      bad "broken agent link $link"
+    else
+      note "unmanaged broken agent link $link (left alone)"
+    fi
   done
 fi
 

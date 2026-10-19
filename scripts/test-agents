@@ -155,13 +155,20 @@ pass 'repeat install and installed dry run are idempotent'
 ln -s "$FIXTURE/agents/retired.md" "$DEST/retired.md"
 ln -s "$TEST_HOME/missing-external.md" "$DEST/foreign.md"
 snapshot >"$ROOT/before"
+expect_failure 'stale owned-link doctor' run_script doctor
+grep '^FIX ' "$LOG" | grep -F "$DEST/retired.md" >/dev/null \
+  || fail 'broken owned agent link was not diagnosed as a problem'
+assert_unchanged 'stale owned-link doctor'
 expect_success 'stale-link dry run' run_script install --dry-run
 assert_unchanged 'stale-link dry run'
 expect_success 'stale-link install' run_script install
 [[ ! -e "$DEST/retired.md" && ! -L "$DEST/retired.md" ]] || fail 'owned stale link was not pruned'
 [[ -L "$DEST/foreign.md" && "$(readlink "$DEST/foreign.md")" == "$TEST_HOME/missing-external.md" ]] \
   || fail 'unrelated broken external link changed'
-pass 'stale owned links are pruned, but unrelated broken external links survive'
+expect_success 'preserved external-link doctor' run_script doctor
+grep '^note ' "$LOG" | grep -F "$DEST/foreign.md" >/dev/null \
+  || fail 'unrelated broken external link was not noted'
+pass 'stale owned links fail doctor and are pruned; unrelated broken links survive with a note'
 
 fixture conflicts
 mkdir -p "$DEST"
@@ -191,6 +198,8 @@ grep -qi warn "$LOG" || fail 'external conflicts did not warn'
 [[ "$(cat "$TEST_HOME/external-researcher.md")" == 'external researcher' ]] || fail 'external target changed'
 [[ "$(readlink "$DEST/reviewer.md")" == "$TEST_HOME/absent-reviewer.md" ]] || fail 'broken external conflict changed'
 expect_failure 'external conflict doctor' run_script doctor
+grep '^FIX ' "$LOG" | grep -F "$DEST/reviewer.md missing/incorrect link" >/dev/null \
+  || fail 'broken external canonical-name conflict was not diagnosed as a problem'
 rm "$DEST/reviewer.md"
 mkdir "$DEST/reviewer.md"
 printf 'keep me\n' >"$DEST/reviewer.md/sentinel"

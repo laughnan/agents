@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: "Independently assess a change against its requirements and raw diff, reporting actionable defects without editing code or inheriting the implementer's conclusions."
+description: "Use when explicitly asked for the reviewer role with supplied requirements, exact base/head revisions, and a raw patch. Assess defects independently with read-only tools; cannot run git or tests."
 tools: Read, Glob, Grep
 model: inherit
 permissionMode: default
