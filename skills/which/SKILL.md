@@ -42,6 +42,7 @@ nothing fits, say so; don't stretch a skill to cover it.
   `principle-prove-it-works`, `principle-subtract-before-you-add`.
 
 **Reviewing and shipping**
+- `lean-pr-review`: walk a PR by concern, separate design advice from bugs, and give a verdict at the reviewed head.
 - `autoreview`: independent review by the other provider (Claude to Codex or back).
 - `land-pr`: rebase, full check gate, merge, verify MERGED.
 
@@ -59,6 +60,7 @@ nothing fits, say so; don't stretch a skill to cover it.
 |---|---|
 | Fuzzy idea to shipped feature | `grill` → `to-spec` → `to-tickets` → `tdd` per ticket → `autoreview` → `land-pr` |
 | Bug report | `diagnose` → `autoreview` → `land-pr` |
+| "Walk me through this PR" | `lean-pr-review`; add `autoreview` when you want an independent second opinion |
 | "Is this small change safe?" | `blast-radius`, then `autoreview` for a second opinion |
 | Changing unfamiliar code | `how` → `why` → then build |
 | "I don't get it" | `teach` for depth, `bro` for ELI5 |
