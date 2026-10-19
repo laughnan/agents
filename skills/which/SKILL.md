@@ -31,6 +31,7 @@ nothing fits, say so; don't stretch a skill to cover it.
 - `blast-radius`: what a small-looking change could break elsewhere, proven by running code.
 
 **Planning**
+- `in-your-own-words`: play back the goal and the problem in your own words, then wait. On a confirm, point at the next skill.
 - `grill`: stress-test a vague plan until every decision is pinned down.
 - `to-spec`: turn the conversation into a spec on the tracker.
 - `to-tickets`: break a spec or plan into vertical-slice tickets with dependencies.
@@ -69,6 +70,7 @@ provider's independent review. See [role handoffs](../../docs/agents.md#reviewer
 | "Is this small change safe?" | `blast-radius`, then `autoreview` for a second opinion |
 | Changing unfamiliar code | `how` → `why` → then build |
 | "I don't get it" | `teach` for depth, `bro` for ELI5 |
+| "Play back what you think I want" | `in-your-own-words` → `grill`, `diagnose`, or `tdd` |
 | End of day / switching laptops | `handoff`, then `pickup` in the next session |
 | Reviewer left lots of comments | fix them, then `capture-learnings` |
 | The agent keeps making the same mistake | `retro` or `capture-learnings`, then `agent-config` to apply |
