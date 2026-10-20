@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Flag private data that shouldn't be in this public repo: personal absolute
+# paths, cloud-sync folders, email addresses, and common secret formats.
+# This is a lint check, not a guarantee. The weekly audit pairs it with a
+# read-through for things a pattern can't catch (names, private projects).
+#
+#   scripts/check-public            scan tracked files
+#   scripts/check-public --history  scan every commit reachable from any ref
+set -uo pipefail
+source "$(dirname "$0")/lib.sh"
+
+patterns=(
+  '/(Users|home)/[A-Za-z0-9._-]+'
+  'iCloud|Mobile Documents|CloudDocs|com~apple~[A-Za-z]+'
+  'Library/(Application Support|Group Containers|Containers|CloudStorage)'
+  '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+  'sk-ant-[A-Za-z0-9_-]+|sk-[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]+|xox[abpr]-[A-Za-z0-9-]+|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY'
+)
+# Placeholders and public addresses, matched against the whole hit.
+allowed='^(/(Users|home)/(you|me|user|username|name|runner)|[^@]+@(example\.(com|org)|users\.noreply\.github\.com|anthropic\.com)|git@github\.com)$'
+
+args=()
+for p in "${patterns[@]}"; do args+=(-e "$p"); done
+revs=()
+# shellcheck disable=SC2207  # commit hashes have no spaces; works on macOS bash 3.2
+[[ "${1:-}" == --history ]] && revs=($(git -C "$REPO" rev-list --all))
+
+# Output is [rev:]file:line:match. Keep one line per file and match, so a hit
+# that lives in many commits is reported once (at the newest commit).
+hits=$(git -C "$REPO" grep -nIoE "${args[@]}" ${revs[@]+"${revs[@]}"} -- . ':!scripts/check-public' |
+  awk -F: -v allowed="$allowed" '$NF !~ allowed && !seen[$(NF-2) FS $NF]++')
+
+if [[ -n "$hits" ]]; then
+  printf '%s\n' "$hits"
+  printf '\ncheck-public: %d possible private item(s). Remove them, or add a true placeholder to the allowlist.\n' \
+    "$(printf '%s\n' "$hits" | wc -l | tr -d ' ')" >&2
+  exit 1
+fi
+echo "check-public: clean"

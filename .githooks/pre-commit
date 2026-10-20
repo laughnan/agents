@@ -3,6 +3,6 @@ set -euo pipefail
 repo="$(git rev-parse --show-toplevel)"
 "$repo/scripts/validate-skills"
 "$repo/scripts/validate-agents"
-for f in "$repo"/scripts/lib.sh "$repo"/scripts/install "$repo"/scripts/doctor "$repo"/scripts/validate-skills "$repo"/scripts/validate-agents "$repo"/scripts/test-agents "$repo"/hooks/*.sh "$repo"/skills/*/scripts/*; do
+for f in "$repo"/scripts/lib.sh "$repo"/scripts/install "$repo"/scripts/doctor "$repo"/scripts/validate-skills "$repo"/scripts/validate-agents "$repo"/scripts/test-agents "$repo"/scripts/check-public "$repo"/hooks/*.sh "$repo"/skills/*/scripts/*; do
   [[ -f "$f" ]] && bash -n "$f"
 done

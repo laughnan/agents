@@ -54,7 +54,7 @@ hooks/               Claude Code hook scripts
 agents/<name>.md     canonical Claude Code subagent definitions
 docs/agents.md       role usage, permissions, and Codex compatibility
 skills/<name>/       one flat directory per skill
-scripts/             install, doctor, validators, test-agents, scratch-dir
+scripts/             install, doctor, validators, test-agents, check-public, scratch-dir
 scratch/             per-checkout agent working files (gitignored)
 ```
 
@@ -98,6 +98,15 @@ Not sure which to use? `/which`.
 - [`principle-fix-root-causes`](skills/principle-fix-root-causes/SKILL.md),
   [`principle-prove-it-works`](skills/principle-prove-it-works/SKILL.md),
   [`principle-subtract-before-you-add`](skills/principle-subtract-before-you-add/SKILL.md)
+
+## Keeping it public-safe
+
+This repo is public. `scripts/check-public` flags personal absolute paths
+(`/Users/<name>`, cloud-sync folders under `~/Library`), email addresses, and
+common token formats in tracked files; `--history` scans every commit too. A weekly
+scheduled Claude task runs it plus a read-through for anything a pattern misses,
+and opens a draft PR with fixes. Anything found only in history is reported, not
+rewritten.
 
 ## Adding a skill
 
