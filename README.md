@@ -95,6 +95,7 @@ Not sure which to use? `/which`.
 - [`diagnose`](skills/diagnose/SKILL.md): disciplined bug and perf diagnosis loop
 - [`tdd`](skills/tdd/SKILL.md): red-green vertical slices
 - [`agent-config`](skills/agent-config/SKILL.md): where config lives and how to change it
+- [`reflect-notes`](skills/reflect-notes/SKILL.md): read and search Reflect notes (personal and work, one graph)
 - [`principle-fix-root-causes`](skills/principle-fix-root-causes/SKILL.md),
   [`principle-prove-it-works`](skills/principle-prove-it-works/SKILL.md),
   [`principle-subtract-before-you-add`](skills/principle-subtract-before-you-add/SKILL.md)

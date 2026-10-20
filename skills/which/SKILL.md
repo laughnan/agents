@@ -57,6 +57,9 @@ provider's independent review. See [role handoffs](../../docs/agents.md#reviewer
 - `capture-learnings`: turn review feedback and corrections into durable rules.
 - `agent-config`: change settings, hooks, global rules, or skills in `~/agents`.
 
+**Notes**
+- `reflect-notes`: read or search Alex's Reflect notes (personal and work, one graph).
+
 **Writing**
 - `meaning-first`: draft or revise prose (emails, memos, posts) so it reads clearly and not like an LLM.
 
