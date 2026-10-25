@@ -11,6 +11,25 @@ MARKER="bébé, alex's agent"
 
 cmd=$(jq -r '.tool_input.command // empty')
 [[ -z "$cmd" ]] && exit 0
+
+# review-loop's reply-resolve posts thread replies with gh inside a script, so
+# gate it like a gh write: every body in its replies file must end with a blank
+# line and the footer, and then it prompts.
+rr_re='reply-resolve[[:space:]]+[0-9]+[[:space:]]+([^[:space:];&|]+)'
+if [[ "$cmd" =~ $rr_re ]]; then
+  f="${BASH_REMATCH[1]/#\~/$HOME}"
+  if [[ -f "$f" ]] && jq -e --arg f "$FOOTER" \
+    'type == "array" and length > 0 and all(.[]; (.body // "") | rtrimstr("\n") | endswith("\n\n" + $f))' \
+    "$f" >/dev/null 2>&1; then
+    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "ask",
+      permissionDecisionReason: "Posting review replies to GitHub as alex — confirm before bébé publishes."}}'
+  else
+    jq -n --arg f "$FOOTER" '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny",
+      permissionDecisionReason: ("reply-resolve posts to GitHub on alex'\''s behalf, but its replies file is missing, unreadable, or has a body that does not end with a blank line and then this exact line:\n\n" + $f)}}'
+  fi
+  exit 0
+fi
+
 [[ "$cmd" == *"gh "* ]] || exit 0
 
 # `gh [-R o/r] pr|issue edit [<n>] --body-file <path>` and nothing else is allowed

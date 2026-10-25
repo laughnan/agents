@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Print a PR's review findings compactly: head commit, check states, each bot or
+# human review's summary (with the commit it reviewed), and every review thread
+# that is unresolved or has no reply from you yet. Exits non-zero if it can't
+# see everything.
+#
+#   pr-findings <pr-number> [owner/repo]
+set -euo pipefail
+pr=${1:?usage: pr-findings <pr-number> [owner/repo]}
+repo=${2:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}
+owner=${repo%/*} name=${repo#*/}
+me=$(gh api user --jq .login)
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+
+# Every review, paginated. Each reply you post is a review too, so a fixed
+# window would push a reviewer's summary out on a busy PR.
+gh api --paginate "repos/$repo/pulls/$pr/reviews?per_page=100" \
+  --jq '.[] | {login: (.user.login // "ghost"), commit: .commit_id, at: .submitted_at, body}' >"$tmp/reviews.jsonl"
+
+# Every thread, a page at a time.
+cursor="" ; : >"$tmp/threads.jsonl"
+while :; do
+  gh api graphql -F owner="$owner" -F name="$name" -F pr="$pr" ${cursor:+-F after="$cursor"} -f query='
+query($owner:String!,$name:String!,$pr:Int!,$after:String){repository(owner:$owner,name:$name){pullRequest(number:$pr){
+  headRefOid isDraft mergeable
+  reviewThreads(first:100,after:$after){pageInfo{hasNextPage endCursor} nodes{id isResolved
+    comments(first:100){totalCount nodes{databaseId author{login} path line originalLine body}}}}}}}' >"$tmp/page.json"
+  python3 -c '
+import json,sys
+p=json.load(open(sys.argv[1]))["data"]["repository"]["pullRequest"]
+json.dump({k:p[k] for k in ("headRefOid","isDraft","mergeable")},open(sys.argv[2],"w"))
+with open(sys.argv[3],"a") as f:
+    for t in p["reviewThreads"]["nodes"]: f.write(json.dumps(t)+"\n")
+pi=p["reviewThreads"]["pageInfo"]; print(pi["endCursor"] if pi["hasNextPage"] else "")
+' "$tmp/page.json" "$tmp/pr.json" "$tmp/threads.jsonl" >"$tmp/next"
+  cursor=$(cat "$tmp/next"); [[ -n "$cursor" ]] || break
+done
+
+python3 - "$me" "$tmp" <<'PY'
+import json,re,sys
+me,tmp=sys.argv[1],sys.argv[2]
+pr=json.load(open(f"{tmp}/pr.json")); head=pr["headRefOid"]
+login=lambda a: (a or {}).get("login") or "ghost"
+clean=lambda s: re.sub(r"<!--.*?-->|<div>.*?</div>|<sub>.*?</sub>|<picture>.*?</picture>","",s or "",flags=re.S).strip()
+print(f"head {head[:7]}  draft={pr['isDraft']}  mergeable={pr['mergeable']}")
+reviews=[json.loads(l) for l in open(f"{tmp}/reviews.jsonl")]
+seen=set()
+for r in reversed(reviews):
+    who=r["login"]
+    if who==me or who in seen or not clean(r["body"]): continue
+    seen.add(who); c=r["commit"] or ""
+    stale="" if c==head else f"  (reviewed {c[:7]}, not head)"
+    print(f"\n== review by {who} at {r['at']}{stale}\n{clean(r['body'])[:3000]}")
+open_=0; incomplete=[]
+for t in map(json.loads,open(f"{tmp}/threads.jsonl")):
+    cm=t["comments"]; cs=cm["nodes"]
+    if cm["totalCount"]>len(cs): incomplete.append(t["id"])
+    if not cs: continue
+    replied=any(login(c["author"])==me for c in cs[1:])
+    if t["isResolved"] and replied: continue
+    open_+=1; c=cs[0]
+    state="resolved, no reply" if t["isResolved"] else "unresolved"
+    print(f"\n== thread {t['id']}  comment {c['databaseId']}  {c['path']}:{c.get('line') or c.get('originalLine')}  by {login(c['author'])}  [{state}]")
+    print(clean(c["body"])[:2000])
+    for r in cs[1:]: print(f"  > reply by {login(r['author'])}: {clean(r['body'])[:300]}")
+print(f"\n{open_} thread(s) need a reply")
+if incomplete: sys.exit(f"error: threads with over 100 comments weren't read in full: {incomplete}")
+PY
+echo; gh pr checks "$pr" --repo "$repo" 2>/dev/null | awk -F'\t' '{print "check: " $1 " = " $2}' || true
