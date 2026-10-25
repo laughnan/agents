@@ -3,12 +3,6 @@
     "pr": "— 👶 bébé, alex's agent · approved by alex"
   },
   "theme": "auto",
-  "permissions": {
-    "allow": [
-      "Bash(gh pr edit:*)",
-      "Bash(gh issue edit:*)"
-    ]
-  },
   "hooks": {
     "PreToolUse": [
       {
