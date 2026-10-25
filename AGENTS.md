@@ -76,6 +76,8 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 - Prefer APIs, CLIs, and connectors over driving a browser or desktop UI. Use the
   browser when only a browser can see it (visual checks).
 - When I name a tool, account, or connector, use that one.
+- Arcade app work (Asana, YNAB, etc.): use the "Connected Alex" connector, not
+  `plugin:arcade:arcade`.
 - Branches and stacks: git-spice (`gs`). Worktrees: worktrunk (`wt`); run
   `gs branch track` on branches `wt` creates. Never bypass commit signing or hooks.
 

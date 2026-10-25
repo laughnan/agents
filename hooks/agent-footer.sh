@@ -40,5 +40,5 @@ if [[ "$text" == *"$MARKER"* ]]; then
     permissionDecisionReason: "Posting to GitHub as alex — confirm before bébé publishes."}}'
 else
   jq -n --arg f "$FOOTER" '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny",
-    permissionDecisionReason: ("This posts text to GitHub on alex'\''s behalf but is missing the agent footer. Re-run with this exact line appended to the body, separated by a blank line:\n\n" + $f)}}'
+    permissionDecisionReason: ("This posts text to GitHub on alex'\''s behalf but is missing the agent footer. Re-run with this exact line appended to the body, separated by a blank line:\n\n" + $f + "\n\nShell variables are not expanded: write the footer literally in the command, or pass a literal --body-file path.")}}'
 fi
