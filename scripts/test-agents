@@ -346,4 +346,14 @@ expect_decision none "gh pr edit 18 --base dev"
 expect_decision none "gh workflow run deploy.yml"
 pass 'footer hook allows only footed body-only description edits; other GitHub writes still prompt'
 
+# review-loop's reply-resolve posts through gh inside a script; gate it the same way.
+jq -n --arg f "$FOOTER" '[{thread: "T", comment: 1, body: ("Fixed.\n\n" + $f)}]' >"$ROOT/replies-ok.json"
+jq -n --arg f "$FOOTER" '[{thread: "T", comment: 1, body: ("Fixed." + $f)}]' >"$ROOT/replies-glued.json"
+jq -n '[{thread: "T", comment: 1, body: "Fixed."}]' >"$ROOT/replies-bare.json"
+expect_decision ask "~/agents/skills/review-loop/scripts/reply-resolve 19 $ROOT/replies-ok.json"
+expect_decision deny "~/agents/skills/review-loop/scripts/reply-resolve 19 $ROOT/replies-glued.json"
+expect_decision deny "~/agents/skills/review-loop/scripts/reply-resolve 19 $ROOT/replies-bare.json"
+expect_decision deny "~/agents/skills/review-loop/scripts/reply-resolve 19 $ROOT/missing.json"
+pass 'footer hook gates review-loop reply-resolve: footed replies prompt, others are denied'
+
 printf 'all %s agent regression groups passed\n' "$checks"

@@ -45,7 +45,7 @@ nothing fits, say so; don't stretch a skill to cover it.
 **Reviewing and shipping**
 - `lean-pr-review`: walk a PR by concern, separate design advice from bugs, and give a verdict at the reviewed head.
 - `autoreview`: independent review by the other provider (Claude to Codex or back).
-- `review-loop`: autoreview before pushing, then Cursor's PR review: fix, reply on and resolve every thread, repeat until clean.
+- `review-loop`: autoreview before pushing, then Cursor's PR review: fix, reply on and resolve every thread, for up to two rounds.
 - `land-pr`: rebase, full check gate, merge, verify MERGED.
 
 The `reviewer` agent is not a slash-command workflow: explicitly request it only
@@ -65,14 +65,13 @@ provider's independent review. See [role handoffs](../../docs/agents.md#reviewer
 
 | Situation | Chain |
 |---|---|
-| Fuzzy idea to shipped feature | `grill` → `to-spec` → `to-tickets` → `tdd` per ticket → `autoreview` → `land-pr` |
-| Bug report | `diagnose` → `autoreview` → `land-pr` |
+| Fuzzy idea to shipped feature | `grill` → `to-spec` → `to-tickets` → `tdd` per ticket → `review-loop` → `land-pr` |
+| Bug report | `diagnose` → `review-loop` → `land-pr` |
 | "Walk me through this PR" | `lean-pr-review`; add `autoreview` when you want an independent second opinion |
 | "Is this small change safe?" | `blast-radius`, then `autoreview` for a second opinion |
 | Changing unfamiliar code | `how` → `why` → then build |
 | "I don't get it" | `teach` for depth, `bro` for ELI5 |
 | "Play back what you think I want" | `in-your-own-words` → `grill`, `diagnose`, or `tdd` |
 | End of day / switching laptops | `handoff`, then `pickup` in the next session |
-| PR is open and needs review to merge | `review-loop` → `land-pr` |
-| Reviewer left lots of comments | fix them, then `capture-learnings` |
+| Reviewer left lots of comments | `review-loop`, then `capture-learnings` |
 | The agent keeps making the same mistake | `retro` or `capture-learnings`, then `agent-config` to apply |

@@ -1,6 +1,6 @@
 ---
 name: review-loop
-description: "Take a PR through review to ready-to-merge: a cross-provider autoreview before pushing, then Cursor's PR review, verifying each finding, fixing, replying on every thread and resolving it, and repeating until a round is clean. Use when the user says \"review loop\", \"get this reviewed\", \"address the Cursor comments\", or \"get this PR ready to merge\"."
+description: "Take a PR through review to ready-to-merge: a cross-provider autoreview before pushing, then Cursor's PR review, verifying each finding, fixing, replying on every thread and resolving it, for up to two rounds. Use when the user says \"review loop\", \"get this reviewed\", \"address the Cursor comments\", or \"get this PR ready to merge\"."
 disable-model-invocation: true
 license: MIT
 ---
@@ -9,12 +9,22 @@ license: MIT
 
 Two reviewers, at two moments. `autoreview` checks the diff before it's pushed;
 Cursor reviews the PR after. This skill runs both and the fix-reply-resolve
-loop between them, then hands off to `land-pr`. It never merges by itself.
+loop between them. It never merges: landing is the user's `/land-pr`.
+
+`autoreview` and `land-pr` are user-invoked skills, so you can't hand off to
+them. Run `autoreview`'s script yourself and follow its SKILL.md; ask the user
+to type `/land-pr`.
 
 ## 1. Before pushing
 
-Run `autoreview` on the branch (`--base origin/main`) and follow its "After the
-review" steps. Skip it for a docs-only change when the user says so.
+```bash
+~/agents/skills/autoreview/scripts/autoreview --focus "<the spec or risk>"
+```
+
+With no target it reviews against the PR's base, or `origin/main`, which is
+right for stacked branches too. Then follow the "After the review" steps in
+`~/agents/skills/autoreview/SKILL.md`. Skip this step for a docs-only change
+when the user says so.
 
 ## 2. Open the PR ready for review
 
@@ -23,14 +33,17 @@ Push the fixes from step 1 first.
 
 ## 3. Make sure Cursor is reviewing
 
-Check the PR's checks and reviews for Cursor. If Cursor hasn't started within a
-few minutes of the push, @-mention Cursor's GitHub handle in a PR comment to
-request a review (the comment needs the agent footer and the user's approval to
-post, like any other).
+Cursor is reviewing when its check is running on the PR, or when `pr-findings`
+(step 4) shows a review from Cursor of the current head. If neither appears a
+few minutes after the push, request one with a top-level PR comment whose first
+line is `cursor review`. Post it with the user's `gh` login: Cursor ignores
+comments from bots and apps, and @-mentions don't start a review. Like any
+comment, it needs the agent footer and the user's approval. If Cursor still
+doesn't start, ask the user to post `cursor review` themselves.
 
-Wait in the background for Cursor's check to finish on the **current head
-commit**. Don't poll in the foreground, and don't merge while it's pending: its
-findings land after the merge.
+Wait in the background until Cursor has reviewed the **current head commit**.
+Don't poll in the foreground, and don't merge before then: its findings would
+land after the merge.
 
 ## 4. Collect findings
 
@@ -40,7 +53,8 @@ findings land after the merge.
 
 It prints the head commit, each reviewer's latest summary (flagging one that
 reviewed an older commit), every thread that's unresolved or has no reply from
-you, including threads the reviewer resolved itself, and the checks.
+you, including threads the reviewer resolved itself, and the checks. It exits
+non-zero if it couldn't read everything.
 
 ## 5. Triage
 
@@ -59,16 +73,16 @@ Commit the fixes, run the repo's checks, and push.
 ## 6. Reply and resolve
 
 Write one reply per thread, naming the commit that fixed it or why nothing
-changed. End each with the agent footer. Then:
+changed. End each body with a blank line and then the agent footer. Then:
 
 ```bash
 ~/agents/skills/review-loop/scripts/reply-resolve <pr> replies.json
 ```
 
 `replies.json` is `[{"thread": "PRRT_…", "comment": 123, "body": "…"}]`, taken
-from `pr-findings`. The script refuses a body without the footer. It posts
-without the footer hook's prompt, so run it only after the user approved
-replying on this PR. Update the PR description if the diff changed.
+from `pr-findings`. The footer hook checks every body and asks the user once
+for the batch; the script checks the footer again and exits non-zero if any
+reply or resolve fails. Update the PR description if the diff changed.
 
 ## 7. Loop, with a cap
 
@@ -79,4 +93,5 @@ the reply and to the user.
 ## 8. Hand off
 
 Report: findings fixed, rejected and why, accepted tradeoffs, and anything that
-only a deploy or apply can prove. If the user wants it merged, run `land-pr`.
+only a deploy or apply can prove. If the user wants it merged, ask them to run
+`/land-pr`.

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Reply on review threads and resolve them, from a JSON file:
 #   [{"thread": "PRRT_…", "comment": 123, "body": "…"}, …]
-# Every body must end with the agent footer (read from hooks/agent-footer.sh).
-# This posts without the footer hook's prompt, so run it only after the user
-# approved replying on this PR.
+# Every body must end with a blank line and then the agent footer (read from
+# hooks/agent-footer.sh). This posts without the footer hook's prompt, so run it
+# only after the user approved replying on this PR. Exits non-zero if any reply
+# or resolve fails.
 #
 #   reply-resolve <pr-number> <replies.json> [owner/repo]
 set -euo pipefail
@@ -14,20 +15,20 @@ hook="$(cd "$(dirname "$0")/../../.." && pwd)/hooks/agent-footer.sh"
 footer=$(sed -n 's/^FOOTER="\(.*\)"$/\1/p' "$hook")
 [[ -n "$footer" ]] || { echo "error: no FOOTER in $hook" >&2; exit 1; }
 
-python3 - "$file" "$footer" <<'PY' || exit 1
-import json,sys
-items=json.load(open(sys.argv[1])); footer=sys.argv[2]
-bad=[i.get("comment") for i in items if not i.get("body","").rstrip().endswith(footer)]
-if bad: sys.exit(f"error: replies missing the footer line for comments {bad}")
-PY
-
-python3 - "$file" "$pr" "$repo" <<'PY'
+python3 - "$file" "$footer" "$pr" "$repo" <<'PY'
 import json,subprocess,sys
-items=json.load(open(sys.argv[1])); pr,repo=sys.argv[2],sys.argv[3]
+items=json.load(open(sys.argv[1])); footer,pr,repo=sys.argv[2],sys.argv[3],sys.argv[4]
+bad=[i.get("comment") for i in items if not i.get("body","").rstrip().endswith("\n\n"+footer)]
+if bad: sys.exit(f"error: replies must end with a blank line and then the footer line; fix comments {bad}")
 q="mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}"
+failed=0
 for i in items:
     r=subprocess.run(["gh","api","-X","POST",f"repos/{repo}/pulls/{pr}/comments/{i['comment']}/replies","-f",f"body={i['body']}","--jq",".id"],capture_output=True,text=True)
-    if r.returncode: print(f"FAILED reply on {i['comment']}: {r.stderr.strip()[:200]}"); continue
+    if r.returncode:
+        failed+=1; print(f"FAILED reply on {i['comment']}: {r.stderr.strip()[:200]}"); continue
     r2=subprocess.run(["gh","api","graphql","-f",f"query={q}","-f",f"t={i['thread']}","--jq",".data.resolveReviewThread.thread.isResolved"],capture_output=True,text=True)
-    print(f"comment {i['comment']}: replied, resolved={r2.stdout.strip() or r2.stderr.strip()[:120]}")
+    if r2.stdout.strip()!="true":
+        failed+=1; print(f"FAILED resolve on {i['comment']} (replied): {(r2.stderr or r2.stdout).strip()[:200]}"); continue
+    print(f"comment {i['comment']}: replied and resolved")
+if failed: sys.exit(f"error: {failed} of {len(items)} failed")
 PY
