@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Print a PR's review findings compactly: head commit, check states, each bot or
+# human review's summary (with the commit it reviewed), and every review thread
+# that is unresolved or has no reply from you yet.
+#
+#   pr-findings <pr-number> [owner/repo]
+set -euo pipefail
+pr=${1:?usage: pr-findings <pr-number> [owner/repo]}
+repo=${2:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}
+owner=${repo%/*} name=${repo#*/}
+me=$(gh api user --jq .login)
+
+gh api graphql -F owner="$owner" -F name="$name" -F pr="$pr" -f query='
+query($owner:String!,$name:String!,$pr:Int!){repository(owner:$owner,name:$name){pullRequest(number:$pr){
+  headRefOid isDraft mergeable
+  reviews(last:20){nodes{author{login} commit{oid} submittedAt body}}
+  reviewThreads(first:100){nodes{id isResolved isOutdated
+    comments(first:30){nodes{databaseId author{login} path line originalLine body}}}}}}}' \
+| python3 -c '
+import json,re,sys
+me=sys.argv[1]
+pr=json.load(sys.stdin)["data"]["repository"]["pullRequest"]
+head=pr["headRefOid"]
+print(f"head {head[:7]}  draft={pr['"'"'isDraft'"'"']}  mergeable={pr['"'"'mergeable'"'"']}")
+clean=lambda s: re.sub(r"<!--.*?-->|<div>.*?</div>|<sub>.*?</sub>|<picture>.*?</picture>","",s or "",flags=re.S).strip()
+seen=set()
+for r in reversed(pr["reviews"]["nodes"]):
+    who=r["author"]["login"]
+    if who==me or who in seen or not clean(r["body"]): continue
+    seen.add(who); c=r["commit"]["oid"] if r["commit"] else ""
+    stale="" if c==head else f"  (reviewed {c[:7]}, not head)"
+    print(f"\n== review by {who} at {r['"'"'submittedAt'"'"']}{stale}\n{clean(r['"'"'body'"'"'])[:3000]}")
+open_=0
+for t in pr["reviewThreads"]["nodes"]:
+    cs=t["comments"]["nodes"]
+    replied=any(c["author"]["login"]==me for c in cs[1:])
+    if t["isResolved"] and replied: continue
+    open_+=1; c=cs[0]
+    state="resolved, no reply" if t["isResolved"] else "unresolved"
+    print(f"\n== thread {t['"'"'id'"'"']}  comment {c['"'"'databaseId'"'"']}  {c['"'"'path'"'"']}:{c.get('"'"'line'"'"') or c.get('"'"'originalLine'"'"')}  by {c['"'"'author'"'"']['"'"'login'"'"']}  [{state}]")
+    print(clean(c["body"])[:2000])
+    for r in cs[1:]: print(f"  > reply by {r['"'"'author'"'"']['"'"'login'"'"']}: {clean(r['"'"'body'"'"'])[:300]}")
+print(f"\n{open_} thread(s) need a reply")
+' "$me"
+echo; gh pr checks "$pr" --repo "$repo" 2>/dev/null | awk -F'\t' '{print "check: " $1 " = " $2}' || true

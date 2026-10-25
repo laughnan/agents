@@ -45,6 +45,7 @@ nothing fits, say so; don't stretch a skill to cover it.
 **Reviewing and shipping**
 - `lean-pr-review`: walk a PR by concern, separate design advice from bugs, and give a verdict at the reviewed head.
 - `autoreview`: independent review by the other provider (Claude to Codex or back).
+- `review-loop`: autoreview before pushing, then Cursor's PR review: fix, reply on and resolve every thread, repeat until clean.
 - `land-pr`: rebase, full check gate, merge, verify MERGED.
 
 The `reviewer` agent is not a slash-command workflow: explicitly request it only
@@ -72,5 +73,6 @@ provider's independent review. See [role handoffs](../../docs/agents.md#reviewer
 | "I don't get it" | `teach` for depth, `bro` for ELI5 |
 | "Play back what you think I want" | `in-your-own-words` → `grill`, `diagnose`, or `tdd` |
 | End of day / switching laptops | `handoff`, then `pickup` in the next session |
+| PR is open and needs review to merge | `review-loop` → `land-pr` |
 | Reviewer left lots of comments | fix them, then `capture-learnings` |
 | The agent keeps making the same mistake | `retro` or `capture-learnings`, then `agent-config` to apply |
