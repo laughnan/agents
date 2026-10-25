@@ -76,6 +76,8 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 - Prefer APIs, CLIs, and connectors over driving a browser or desktop UI. Use the
   browser when only a browser can see it (visual checks).
 - When I name a tool, account, or connector, use that one.
+- Arcade app work (Asana, YNAB, etc.): use the "Connected Alex" connector, not
+  `plugin:arcade:arcade`.
 - Branches and stacks: git-spice (`gs`). Worktrees: worktrunk (`wt`); run
   `gs branch track` on branches `wt` creates. Never bypass commit signing or hooks.
 
@@ -91,7 +93,9 @@ descriptions), end the text with this line, separated by a blank line:
 
 — 👶 bébé, alex's agent · approved by alex
 
-Only post after I've approved it. Don't add the footer to commit messages or code.
+Only post after I've approved it. Editing the description of a PR or issue
+doesn't need my approval; comments, reviews, and new PRs or issues do. Don't add
+the footer to commit messages or code.
 
 ## Agent configuration
 
