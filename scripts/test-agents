@@ -315,4 +315,35 @@ expect_denied Write file_path "$TEST_HOME/.claude/settings.json"
 expect_denied Bash command 'printf test > "$HOME/.codex/AGENTS.md"'
 pass 'guard denies writes to owned aliases only; canonical, external and read-only access remain allowed'
 
+footer_hook() {
+  jq -n --arg c "$1" '{tool_input: {command: $c}}' \
+    | isolated "$BASH_BIN" "$FIXTURE/hooks/agent-footer.sh"
+}
+expect_decision() {
+  local want=$1 cmd=$2 got
+  got=$(footer_hook "$cmd" | jq -r '.hookSpecificOutput.permissionDecision // empty')
+  [[ "${got:-none}" == "$want" ]] || fail "footer hook gave ${got:-none}, want $want: $cmd"
+}
+
+fixture footer
+FOOTER="— 👶 bébé, alex's agent · approved by alex"
+printf 'New description\n\n%s\n' "$FOOTER" >"$ROOT/footed.md"
+printf 'New description\n' >"$ROOT/bare.md"
+# Only a body-only edit whose file carries the footer skips the prompt.
+expect_decision allow "gh pr edit 18 --body-file $ROOT/footed.md"
+expect_decision allow "gh -R o/r issue edit 5 -F $ROOT/footed.md"
+expect_decision allow "gh pr edit --body-file $ROOT/footed.md"
+expect_decision deny "gh pr edit 18 --body-file $ROOT/bare.md"
+expect_decision ask "gh pr edit 18 --body-file $ROOT/footed.md --add-reviewer octocat"
+expect_decision ask "gh pr edit 18 --body-file $ROOT/footed.md && gh workflow run deploy.yml"
+expect_decision ask "gh pr edit 18 --body 'x
+
+$FOOTER'"
+expect_decision ask "gh pr edit 18 --body 'x' # $FOOTER"
+expect_decision ask "gh pr comment 18 --body-file $ROOT/footed.md"
+# Edits without a body get no hook decision, so normal permissions prompt.
+expect_decision none "gh pr edit 18 --base dev"
+expect_decision none "gh workflow run deploy.yml"
+pass 'footer hook allows only footed body-only description edits; other GitHub writes still prompt'
+
 printf 'all %s agent regression groups passed\n' "$checks"
