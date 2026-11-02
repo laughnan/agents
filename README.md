@@ -6,7 +6,8 @@ that work in Claude Code and Codex.
 
 Inspired by [pstack](https://github.com/cursor/plugins/tree/main/pstack),
 [mattpocock/skills](https://github.com/mattpocock/skills), and
-[steipete/agent-scripts](https://github.com/steipete/agent-scripts). See `NOTICE`.
+[steipete/agent-scripts](https://github.com/steipete/agent-scripts). See `NOTICE`;
+the last upstream commits we read are in `docs/upstreams.md`.
 
 ## New laptop
 
