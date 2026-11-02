@@ -14,26 +14,26 @@ the last upstream commits we read are in `docs/upstreams.md`.
 ```bash
 git clone <this repo> ~/agents
 cd ~/agents
-make deps
-mise exec -- scripts/install --dry-run
-make install
+make dry-run
+make
 make doctor
 ```
 
-`make deps` installs [mise](https://mise.jdx.dev) (with Homebrew) and the tools
-pinned in `mise.toml`: `jq` for install, plus Node, Java, and TLC for `statechart`.
-To use that Node outside this repo, run `mise use -g node@22` or activate mise in
-your shell.
+`make` (same as `make install`) installs [mise](https://mise.jdx.dev) with Homebrew
+if it's missing, then the tools pinned in `mise.toml` (`jq` for install; Node, Java,
+and TLC for `statechart`), then runs `scripts/install`. From any directory, use
+`make -C ~/agents`. To use the pinned Node outside this repo, run
+`mise use -g node@22` or activate mise in your shell.
 
 Then add laptop-only overrides if needed (both gitignored):
 
 ```bash
 cp ~/agents/local/claude.settings.json.example ~/agents/local/claude.settings.json
 cp ~/agents/local/AGENTS.md.example ~/agents/local/AGENTS.md
-~/agents/scripts/install
+make -C ~/agents
 ```
 
-After any `git pull`, rerun `scripts/install`.
+After any `git pull`, rerun `make`. `make update` pulls and installs in one step.
 
 ## What install does
 
