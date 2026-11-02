@@ -13,7 +13,7 @@ The chart shows how a system moves between states, in the words of the person wh
 
 ## Run
 
-Work in a scratch folder outside the repo. Write a TLA+ spec and its config. Then run:
+Work in a folder under the checkout's scratch directory, which `~/agents/scripts/scratch-dir "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"` prints. Write a TLA+ spec and its config. Then run:
 
 ```sh
 <skill dir>/scripts/statechart SPEC.tla [--config FILE] [--view FILE] [--out DIR]
@@ -21,7 +21,10 @@ Work in a scratch folder outside the repo. Write a TLA+ spec and its config. The
 
 The command is TypeScript under `tool/`. Its launcher picks Node 22.18+, Bun, or Deno, whichever is installed.
 
-The first run installs TLC and Java with mise and needs the network.
+The command needs TLC and Java. Before writing the spec, check how it will get them:
+
+- If `TLA2TOOLS` (path to `tla2tools.jar`) and `JAVA` (a Java 11+ binary) are set, it uses those.
+- Otherwise it installs `java@temurin-25` and a pinned `tla2tools.jar` with mise, over the network. If `command -v mise` finds nothing, stop and tell the user to install mise or set both variables. If mise would install them, tell the user what it will install and wait for a yes.
 
 ## Write the spec
 

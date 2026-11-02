@@ -39,7 +39,7 @@ Test boundaries with concrete scenarios. When the plan relates two concepts, inv
 
 Finding **facts** is your job. If a question needs a fact from the environment (code, config, docs, tools), look it up yourself, or dispatch a sub-agent with a fresh context window (not a fork of this conversation) if your harness supports one; never ask the user for something you could find. Don't block on it: only questions downstream of a pending lookup wait; ask the rest now.
 
-When the user states how something works, check the code. If it disagrees, put the contradiction to them: "You said partial cancellation is possible, but the code cancels whole orders. Which is right?"
+When the user states how something works today, check the code. If it disagrees, put the contradiction to them: "You said partial cancellation is possible, but the code cancels whole orders. Which is right?" When they describe how it should work, a mismatch is the change, not an error: name what the code does today and grill the change's edge cases.
 
 **Decisions** are the user's. Put each to them and wait.
 

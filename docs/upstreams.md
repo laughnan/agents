@@ -24,7 +24,9 @@ Upstream changes reviewed at the commits above and left for a later decision:
 
 Adopted at these commits: pstack `sharpen` and `statechart`. `statechart`
 vendors upstream's `scripts/` as `tool/`, without its test suite; when syncing,
-copy the new `scripts/` over `tool/` and drop `test/` again.
+copy upstream's `scripts/` over `tool/` and delete `tool/test/`. Keep our
+`scripts/statechart` symlink (to `../tool/statechart`), the
+`scripts/statechart` path in `SKILL.md`, and our edits to its Run section.
 
 Reviewed and skipped: pstack `how`/`why` model-routing changes (Cursor-only),
 steipete `codex-first` and release tooling, openclaw `autoreview` CLI fixes
