@@ -13,20 +13,26 @@ the last upstream commits we read are in `docs/upstreams.md`.
 
 ```bash
 git clone <this repo> ~/agents
-~/agents/scripts/install --dry-run
-~/agents/scripts/install
-~/agents/scripts/doctor
+cd ~/agents
+make dry-run
+make
+make doctor
 ```
+
+`make` (same as `make install`) installs `jq` with Homebrew if it's missing, then
+runs `scripts/install`. From any directory, use `make -C ~/agents`. `make deps` is
+optional: it installs [mise](https://mise.jdx.dev) and the tools `statechart` needs
+(Node, Java, and TLC, pinned in `mise.toml`).
 
 Then add laptop-only overrides if needed (both gitignored):
 
 ```bash
 cp ~/agents/local/claude.settings.json.example ~/agents/local/claude.settings.json
 cp ~/agents/local/AGENTS.md.example ~/agents/local/AGENTS.md
-~/agents/scripts/install
+make -C ~/agents
 ```
 
-After any `git pull`, rerun `scripts/install`.
+After any `git pull`, rerun `make`. `make update` pulls and installs in one step.
 
 ## What install does
 
