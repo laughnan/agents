@@ -19,7 +19,7 @@ Work in a folder under the checkout's scratch directory, which `~/agents/scripts
 <skill dir>/scripts/statechart SPEC.tla [--config FILE] [--view FILE] [--out DIR]
 ```
 
-The command is TypeScript under `tool/`. Its launcher picks Node 22.18+ or 23.6+, Bun, or Deno from PATH.
+The command is TypeScript under `tool/`. Its launcher picks Node 22.18+ or 23.6+, Bun, or Deno from PATH. If it exits 127, none is on PATH: stop and tell the user to install a newer Node (it comes from their dotfiles), not to run `make deps`, which does not install Node.
 
 The command needs TLC and Java. Before writing the spec, check how it will get them:
 
