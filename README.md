@@ -6,7 +6,8 @@ that work in Claude Code and Codex.
 
 Inspired by [pstack](https://github.com/cursor/plugins/tree/main/pstack),
 [mattpocock/skills](https://github.com/mattpocock/skills), and
-[steipete/agent-scripts](https://github.com/steipete/agent-scripts). See `NOTICE`.
+[steipete/agent-scripts](https://github.com/steipete/agent-scripts). See `NOTICE`;
+the last upstream commits we read are in `docs/upstreams.md`.
 
 ## New laptop
 
@@ -80,7 +81,9 @@ Not sure which to use? `/which`.
 - [`teach`](skills/teach/SKILL.md): plain explanation built on `how` + `why`
 - [`bro`](skills/bro/SKILL.md): ELI5, restate the last message or a topic with no jargon
 - [`blast-radius`](skills/blast-radius/SKILL.md): what a change could break, proven by running code
+- [`statechart`](skills/statechart/SKILL.md): check a TLA+ model and draw it as a Mermaid statechart
 - [`in-your-own-words`](skills/in-your-own-words/SKILL.md): play back the goal and the problem, then wait
+- [`sharpen`](skills/sharpen/SKILL.md): rewrite a task to ask for the deeper version
 - [`grill`](skills/grill/SKILL.md): stress-test a plan until it's concrete
 - [`to-spec`](skills/to-spec/SKILL.md) / [`to-tickets`](skills/to-tickets/SKILL.md): conversation to spec to tickets
 - [`lean-pr-review`](skills/lean-pr-review/SKILL.md): concern-by-concern PR walkthrough, evidence-backed verdict, optional local HTML report
