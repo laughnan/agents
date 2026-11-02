@@ -15,10 +15,12 @@ update:
 	git pull --ff-only
 	$(MAKE) install
 
+MISE := $(or $(shell command -v mise),$(wildcard $(HOME)/.local/bin/mise))
+
 deps:
-	@command -v mise >/dev/null || brew install mise
-	mise trust --quiet mise.toml
-	mise install
+	@[ -n "$(MISE)" ] || { echo "error: mise not on PATH or in ~/.local/bin (it comes from dotfiles)" >&2; exit 1; }
+	$(MISE) trust --quiet mise.toml
+	$(MISE) install
 
 doctor:
 	scripts/doctor

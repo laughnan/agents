@@ -21,8 +21,9 @@ make doctor
 
 `make` (same as `make install`) installs `jq` with Homebrew if it's missing, then
 runs `scripts/install`. From any directory, use `make -C ~/agents`. `make deps` is
-optional: it installs [mise](https://mise.jdx.dev) and the tools `statechart` needs
-(Node, Java, and TLC, pinned in `mise.toml`).
+optional: with [mise](https://mise.jdx.dev) on PATH, it installs the Java and TLC
+`statechart` needs, pinned in `mise.toml`. Node (22.18+ or 23.6+) and mise come
+from your dotfiles.
 
 Then add laptop-only overrides if needed (both gitignored):
 
