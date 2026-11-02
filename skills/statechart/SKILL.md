@@ -24,7 +24,7 @@ The command is TypeScript under `tool/`. It uses mise's Node 22 when `make deps`
 The command needs TLC and Java. Before writing the spec, check how it will get them:
 
 - If `TLA2TOOLS` (path to `tla2tools.jar`) and `JAVA` (a Java 11+ binary) are set, it uses those.
-- Otherwise it installs `java@temurin-25` and a pinned `tla2tools.jar` with mise, over the network. If `command -v mise` finds nothing, stop and tell the user to install mise or set both variables. If `mise where java@temurin-25` succeeds, `make deps` in `~/agents` has installed them: go ahead. Otherwise mise would download them, so tell the user what it will install (or that `make -C ~/agents deps` installs it up front) and wait for a yes.
+- Otherwise it installs `java@temurin-25` and a pinned `tla2tools.jar` with mise, over the network. If `command -v mise` finds nothing, stop and tell the user to install mise or set both variables. If `mise where java@temurin-25` and `mise where` on the `TLC_TOOL` spec in `tool/run.ts` both succeed, both are installed (`make deps` in `~/agents` does that): go ahead. Otherwise mise would download them, so tell the user what it will install (or that `make -C ~/agents deps` installs it up front) and wait for a yes.
 
 ## Write the spec
 
