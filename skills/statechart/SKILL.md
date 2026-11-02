@@ -24,7 +24,7 @@ The command is TypeScript under `tool/`. Its launcher picks Node 22.18+, Bun, or
 The command needs TLC and Java. Before writing the spec, check how it will get them:
 
 - If `TLA2TOOLS` (path to `tla2tools.jar`) and `JAVA` (a Java 11+ binary) are set, it uses those.
-- Otherwise it installs `java@temurin-25` and a pinned `tla2tools.jar` with mise, over the network. If `command -v mise` finds nothing, stop and tell the user to install mise or set both variables. If mise would install them, tell the user what it will install and wait for a yes.
+- Otherwise it installs `java@temurin-25` and a pinned `tla2tools.jar` with mise, over the network. If `command -v mise` finds nothing, stop and tell the user to install mise or set both variables. If mise would install them, tell the user what it will install and wait for a yes. `make deps` in `~/agents` installs both up front, from `mise.toml`.
 
 ## Write the spec
 

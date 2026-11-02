@@ -13,10 +13,17 @@ the last upstream commits we read are in `docs/upstreams.md`.
 
 ```bash
 git clone <this repo> ~/agents
-~/agents/scripts/install --dry-run
-~/agents/scripts/install
-~/agents/scripts/doctor
+cd ~/agents
+make deps
+mise exec -- scripts/install --dry-run
+make install
+make doctor
 ```
+
+`make deps` installs [mise](https://mise.jdx.dev) (with Homebrew) and the tools
+pinned in `mise.toml`: `jq` for install, plus Node, Java, and TLC for `statechart`.
+To use that Node outside this repo, run `mise use -g node@22` or activate mise in
+your shell.
 
 Then add laptop-only overrides if needed (both gitignored):
 
