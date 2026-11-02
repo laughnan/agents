@@ -29,9 +29,11 @@ nothing fits, say so; don't stretch a skill to cover it.
 - `teach`: walk me through it until I actually understand it; runs `how` and `why`, explains plainly.
 - `bro`: ELI5. Restate the last message with no jargon, or `/bro <topic>` to explain a topic from scratch.
 - `blast-radius`: what a small-looking change could break elsewhere, proven by running code.
+- `statechart`: model a flow or protocol in TLA+, check its rules, and draw it as a Mermaid statechart with the shortest path to each bug.
 
 **Planning**
 - `in-your-own-words`: play back the goal and the problem in your own words, then wait. On a confirm, point at the next skill.
+- `sharpen`: make a task deeper, not bigger; rewrites the prompt the way a top professional would ask it.
 - `grill`: stress-test a vague plan until every decision is pinned down.
 - `to-spec`: turn the conversation into a spec on the tracker.
 - `to-tickets`: break a spec or plan into vertical-slice tickets with dependencies.

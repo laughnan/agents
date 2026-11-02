@@ -22,6 +22,12 @@ Upstream changes reviewed at the commits above and left for a later decision:
   items to stay under a word count" (ea32d95 through bc14437). Ours stays
   text-only on purpose.
 
+Adopted at these commits: pstack `sharpen` and `statechart`. `statechart`
+vendors upstream's `scripts/` as `tool/`, without its test suite; when syncing,
+copy the new `scripts/` over `tool/` and drop `test/` again.
+
 Reviewed and skipped: pstack `how`/`why` model-routing changes (Cursor-only),
 steipete `codex-first` and release tooling, openclaw `autoreview` CLI fixes
-(our skill calls the CLI directly, not their scripts).
+(our skill calls the CLI directly, not their scripts). New and not adopted:
+pstack `ketchup-video` and the formal-verification skills, Matt's
+`software-factory` (in progress upstream).
