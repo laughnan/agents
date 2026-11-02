@@ -16,7 +16,7 @@ update:
 	$(MAKE) install
 
 deps:
-	@command -v mise >/dev/null || brew install mise
+	@command -v mise >/dev/null || { echo "error: mise is required (install it with your dotfiles)" >&2; exit 1; }
 	mise trust --quiet mise.toml
 	mise install
 

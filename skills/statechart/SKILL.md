@@ -19,7 +19,7 @@ Work in a folder under the checkout's scratch directory, which `~/agents/scripts
 <skill dir>/scripts/statechart SPEC.tla [--config FILE] [--view FILE] [--out DIR]
 ```
 
-The command is TypeScript under `tool/`. It uses mise's Node 22 when `make deps` has installed it, else Node 22.18+, Bun, or Deno from PATH.
+The command is TypeScript under `tool/`. Its launcher picks Node 22.18+ or 23.6+, Bun, or Deno from PATH.
 
 The command needs TLC and Java. Before writing the spec, check how it will get them:
 
