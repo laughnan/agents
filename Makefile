@@ -1,25 +1,27 @@
-# `make` installs everything: the tools pinned in mise.toml, then this repo's
-# skills, agents, and config (scripts/install). `make update` pulls first.
+# `make` installs this repo's skills, agents, and config (scripts/install).
+# It needs only jq, installed with Homebrew if it's missing.
+# `make deps` installs the optional tools statechart needs, pinned in mise.toml.
 
-.PHONY: install deps dry-run update doctor check
+.PHONY: install dry-run update deps doctor check
 
-install: deps
-	mise exec -- scripts/install
+install:
+	@command -v jq >/dev/null || brew install jq
+	scripts/install
+
+dry-run:
+	scripts/install --dry-run
+
+update:
+	git pull --ff-only
+	$(MAKE) install
 
 deps:
 	@command -v mise >/dev/null || brew install mise
 	mise trust --quiet mise.toml
 	mise install
 
-dry-run: deps
-	mise exec -- scripts/install --dry-run
-
-update:
-	git pull --ff-only
-	$(MAKE) install
-
 doctor:
-	mise exec -- scripts/doctor
+	scripts/doctor
 
 check:
 	scripts/validate-skills

@@ -1,1 +1,13 @@
-../tool/statechart
+#!/bin/sh
+# Run the vendored statechart launcher. With mise, use the Node pinned in
+# ~/agents/mise.toml (`make deps` installs it), whatever node is on PATH.
+self=$0
+while [ -L "$self" ]; do
+  link=$(readlink "$self")
+  case $link in /*) self=$link ;; *) self=$(dirname "$self")/$link ;; esac
+done
+tool=$(cd "$(dirname "$self")/../tool" && pwd)/statechart
+if command -v mise >/dev/null && mise where node@22 >/dev/null 2>&1; then
+  exec mise exec node@22 -- "$tool" "$@"
+fi
+exec "$tool" "$@"
