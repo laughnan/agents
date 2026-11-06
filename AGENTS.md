@@ -81,6 +81,10 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 - Arcade app work (Asana, YNAB, etc.): use the Arcade connector.
 - Branches and stacks: git-spice (`gs`). Worktrees: worktrunk (`wt`); run
   `gs branch track` on branches `wt` creates. Never bypass commit signing or hooks.
+- CI status: `list_workflow_jobs` for a run id, or a PR's check runs. Never a
+  bare `list_workflow_runs`; it returns 100k+ characters.
+- GCP: before saying you have no access, check `$GOOGLE_APPLICATION_CREDENTIALS`
+  and activate it with `gcloud auth activate-service-account --key-file`.
 
 ## Data
 
