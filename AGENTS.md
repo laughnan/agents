@@ -69,9 +69,8 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 - Plan in a spec in the repo's spec location (`docs/specs/` if it has none), and keep
   it updated as you go so the next agent can pick up from it.
 - Ship one phase per PR, each with tests.
-- File follow-ups as tickets instead of leaving them in chat. Arcade work: the
-  tracker the repo's workflow uses (usually Linear; the monorepo requires a
-  Linear issue on every PR). Personal work: Asana.
+- File follow-ups as tickets instead of leaving them in chat. Repos in the
+  `ArcadeAI` or `ArcadeAI-labs` GitHub orgs: Linear. Everything else: Asana.
 
 ## Tools
 
