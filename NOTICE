@@ -9,6 +9,8 @@ adapted SKILL.md names its upstream in `metadata.source`.
   https://github.com/steipete/agent-scripts
 - agent-skills (OpenClaw)
   https://github.com/openclaw/agent-skills
+- avoid-ai-writing, Copyright (c) 2026 Conor Bronsdon
+  https://github.com/conorbronsdon/avoid-ai-writing
 
 Each is distributed under the MIT License:
 

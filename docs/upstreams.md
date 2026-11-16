@@ -10,6 +10,7 @@ skill's `metadata.source`). On the next sync, review
 | [mattpocock/skills](https://github.com/mattpocock/skills) | `4ae2317ddb22b046e26455e4f9c9b3aaaf62212d` | 2026-10-31 |
 | [steipete/agent-scripts](https://github.com/steipete/agent-scripts) | `d210c0a77c8f9ae5e1d939b13238a75e87cdb69a` | 2026-10-30 |
 | [openclaw/agent-skills](https://github.com/openclaw/agent-skills) | `a2180a0224c2102ace57254ef0ce3f760d482d45` | 2026-11-01 |
+| [conorbronsdon/avoid-ai-writing](https://github.com/conorbronsdon/avoid-ai-writing) (`skills/avoid-ai-writing/`) | `cc1d34319b4cc599bf503b80d35d7442bcde8047` | 2026-11-15 |
 
 ## Not yet adopted
 
@@ -27,6 +28,13 @@ vendors upstream's `scripts/` as `tool/`, without its test suite; when syncing,
 copy upstream's `scripts/` over `tool/` and delete `tool/test/`. Keep our
 `scripts/statechart` symlink (to `../tool/statechart`), the
 `scripts/statechart` path in `SKILL.md`, and our edits to its Run section.
+
+`avoid-ai-writing` vendors upstream's `skills/avoid-ai-writing/` without
+`agents/openai.yaml`. When syncing, copy upstream's `scripts/` over `tool/`
+(our pre-commit runs `bash -n` on `skills/*/scripts/*`, so Node files can't
+live there), rewrite `node scripts/` to `node tool/` in `SKILL.md` and
+`examples/README.md`, and keep our frontmatter (quoted description,
+`disable-model-invocation: true`, `metadata.source`).
 
 Reviewed and skipped: pstack `how`/`why` model-routing changes (Cursor-only),
 steipete `codex-first` and release tooling, openclaw `autoreview` CLI fixes
