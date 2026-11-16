@@ -62,6 +62,7 @@ provider's independent review. See [role handoffs](../../docs/agents.md#reviewer
 
 **Writing**
 - `meaning-first`: draft or revise prose (emails, memos, posts) so it reads clearly and not like an LLM.
+- `avoid-ai-writing`: audit existing text for AI-isms against a detailed catalog; flag only, rewrite, or edit a file in place.
 
 ## Common chains
 

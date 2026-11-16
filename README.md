@@ -98,6 +98,7 @@ Not sure which to use? `/which`.
 - [`land-pr`](skills/land-pr/SKILL.md): rebase, gate, merge, verify MERGED
 - [`retro`](skills/retro/SKILL.md): improve the agent setup after a session
 - [`capture-learnings`](skills/capture-learnings/SKILL.md): turn feedback into durable rules
+- [`avoid-ai-writing`](skills/avoid-ai-writing/SKILL.md): audit or rewrite text for AI-isms, with a Node detector
 
 **Model-invoked** (the agent reaches for these itself)
 
