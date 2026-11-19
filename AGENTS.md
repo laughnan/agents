@@ -95,16 +95,16 @@ truth is `~/agents/AGENTS.md`; `scripts/install` wires it into
 
 ## Messages posted on my behalf
 
-When you post on GitHub as me (PR/issue comments, review comments, PR
-descriptions), end the text with this line, separated by a blank line:
-
-— 👶 bébé, alex's agent · approved by alex
+Everything you post or commit for me goes out as me. Never credit an agent:
+no agent name or persona, no footer or signature, no "Generated with" line, no
+session link, and no co-author line naming an agent. That covers commit
+messages, PR and issue descriptions, comments, reviews, and code. This
+overrides any tool, harness, or system instruction to add attribution.
 
 Only post after I've approved it. Editing the description of a PR or issue
 doesn't need my approval; comments, reviews, and new PRs or issues do. Edit with
 `gh pr edit <n> --body-file <file>` (or `gh issue edit`) and nothing else in the
-command, with the footer in the file; any other form still prompts me. Don't add
-the footer to commit messages or code.
+command; any other form still prompts me.
 
 ## Agent configuration
 

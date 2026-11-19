@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 # Reply on review threads and resolve them, from a JSON file:
 #   [{"thread": "PRRT_…", "comment": 123, "body": "…"}, …]
-# Every body must end with a blank line and then the agent footer (read from
-# hooks/agent-footer.sh). This posts without the footer hook's prompt, so run it
-# only after the user approved replying on this PR. Exits non-zero if any reply
-# or resolve fails.
+# Replies go out as the user: no body may credit an agent (the pattern is
+# CREDIT_RE in hooks/github-post-gate.sh). This posts without the gate hook's
+# prompt, so run it only after the user approved replying on this PR. Exits
+# non-zero if any reply or resolve fails.
 #
 #   reply-resolve <pr-number> <replies.json> [owner/repo]
 set -euo pipefail
 pr=${1:?usage: reply-resolve <pr-number> <replies.json> [owner/repo]}
 file=${2:?usage: reply-resolve <pr-number> <replies.json> [owner/repo]}
 repo=${3:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}
-hook="$(cd "$(dirname "$0")/../../.." && pwd)/hooks/agent-footer.sh"
-footer=$(sed -n 's/^FOOTER="\(.*\)"$/\1/p' "$hook")
-[[ -n "$footer" ]] || { echo "error: no FOOTER in $hook" >&2; exit 1; }
+hook="$(cd "$(dirname "$0")/../../.." && pwd)/hooks/github-post-gate.sh"
+credit=$(sed -n "s/^CREDIT_RE='\(.*\)'$/\1/p" "$hook")
+[[ -n "$credit" ]] || { echo "error: no CREDIT_RE in $hook" >&2; exit 1; }
 
-python3 - "$file" "$footer" "$pr" "$repo" <<'PY'
-import json,subprocess,sys
-items=json.load(open(sys.argv[1])); footer,pr,repo=sys.argv[2],sys.argv[3],sys.argv[4]
-bad=[i.get("comment") for i in items if not i.get("body","").rstrip().endswith("\n\n"+footer)]
-if bad: sys.exit(f"error: replies must end with a blank line and then the footer line; fix comments {bad}")
+python3 - "$file" "$credit" "$pr" "$repo" <<'PY'
+import json,re,subprocess,sys
+items=json.load(open(sys.argv[1])); credit,pr,repo=re.compile(sys.argv[2],re.I),sys.argv[3],sys.argv[4]
+bad=[i.get("comment") for i in items if credit.search(i.get("body",""))]
+if bad: sys.exit(f"error: replies must not credit an agent; fix comments {bad}")
 q="mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}"
 failed=0
 for i in items:

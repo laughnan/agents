@@ -38,7 +38,7 @@ Cursor is reviewing when its check is running on the PR, or when `pr-findings`
 few minutes after the push, request one with a top-level PR comment whose first
 line is `cursor review`. Post it with the user's `gh` login: Cursor ignores
 comments from bots and apps, and @-mentions don't start a review. Like any
-comment, it needs the agent footer and the user's approval. If Cursor still
+comment, it needs the user's approval. If Cursor still
 doesn't start, ask the user to post `cursor review` themselves.
 
 Wait in the background until Cursor has reviewed the **current head commit**.
@@ -73,16 +73,16 @@ Commit the fixes, run the repo's checks, and push.
 ## 6. Reply and resolve
 
 Write one reply per thread, naming the commit that fixed it or why nothing
-changed. End each body with a blank line and then the agent footer. Then:
+changed. Write them as the user: no agent footer or other agent credit. Then:
 
 ```bash
 ~/agents/skills/review-loop/scripts/reply-resolve <pr> replies.json
 ```
 
 `replies.json` is `[{"thread": "PRRT_…", "comment": 123, "body": "…"}]`, taken
-from `pr-findings`. The footer hook checks every body and asks the user once
-for the batch; the script checks the footer again and exits non-zero if any
-reply or resolve fails. Update the PR description if the diff changed.
+from `pr-findings`. The GitHub post gate checks every body for agent credit and
+asks the user once for the batch; the script checks again and exits non-zero if
+any reply or resolve fails. Update the PR description if the diff changed.
 
 ## 7. Loop, with a cap
 
